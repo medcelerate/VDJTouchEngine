@@ -38,8 +38,11 @@ private:
 	std::string filePath;
 	TEInstance* instance = nullptr;
 	ID3D11Device* D3DDevice = nullptr;
-	TED3D11Context* D3DContext = nullptr;
+	ID3D11Texture2D* D3DTextureInput = nullptr;
 
+	TETexture * TEOutputTexture = nullptr;
+	TED3D11Context* D3DContext = nullptr;
+	TED3D11Texture* TEOutput = nullptr;
 	TED3D11Texture* TEInput = nullptr;
 
 	bool OpenFileDialog();

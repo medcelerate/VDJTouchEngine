@@ -83,6 +83,11 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 
 	if (instance != nullptr)
 	{
+		TEInstanceSuspend(instance);
+		TEInstanceUnload(instance);
+		TERelease(&TEInput);
+		TERelease(&TEOutput);
+		TERelease(&TEOutputTexture);
 		TERelease(&instance);
 		instance = nullptr;
 		D3DContext = nullptr;
@@ -105,8 +110,14 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	ID3D11ShaderResourceView* textureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
 	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, &verts);
+
+	//Hving issues loading CComptr here, need to try to resolve this.
 	CComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
 	D3DDevice->GetImmediateContext(&devContext.p);
+
+	//Need to setup D3D fence from TD in order to initialize texture transfer.
+
+	//Need to texture transfer out.
 
 	return S_OK;
 }
@@ -168,9 +179,45 @@ bool VDJTouchEngine::LoadTEFile()
 	// Need to check for in and out params here. If there are none, then it is not an FX.
 	// If there are, then it is an FX and we need to set the in and out params.
 
+	TEInput = TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr);
+	res = TEInstanceLinkSetTextureValue(instance, "input", TEInput, D3DContext);
 
+	if (res != TEResultSuccess)
+	{
+		isFX = false;
+	}
+	else
+	{
+		isFX = true;
+		res = TEInstanceLinkGetTextureValue(instance, "output", TELinkValueCurrent, &TEOutputTexture);
+
+		if (res != TEResultSuccess)
+		{
+			return false;
+		}
+
+		if (TEOutputTexture != nullptr) {
+			if (TETextureGetType(TEOutputTexture) == TETextureTypeD3DShared)
+			{
+				res = TED3D11ContextGetTexture(D3DContext, (TED3DSharedTexture*)TEOutputTexture, &TEOutput);
+				if (res != TEResultSuccess)
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
 
 	res = TEInstanceResume(instance);
+
+	if (res != TEResultSuccess)
+	{
+		return false;
+	}
 
 	return true;
 }

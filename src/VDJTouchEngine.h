@@ -12,6 +12,7 @@
 
 #include <string>
 #include <windows.h>
+#include <memory>
 #include "VDJ/vdjVideo8.h"
 #include "TouchEngine/TouchObject.h"
 #include "TouchEngine/TEGraphicsContext.h"

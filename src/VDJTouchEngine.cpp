@@ -100,7 +100,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	HRESULT hr;
-	TVertex *verts = nullptr;
+	TVertex* verts = nullptr;
 
 
 	if (VideoWidth != width || VideoHeight != height)
@@ -112,8 +112,23 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, &verts);
 
 	//Hving issues loading CComptr here, need to try to resolve this.
-	CComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
-	D3DDevice->GetImmediateContext(&devContext.p);
+	std::unique_ptr<ID3D11DeviceContext*> devContext; //use smart pointer to automatically release pointer and prevent memory leak
+	D3DDevice->GetImmediateContext(devContext.get());
+
+	std::unique_ptr<ID3D11Resource*> textureResource;
+	textureView->GetResource(textureResource.get());
+	if (!textureResource) {
+		return E_FAIL;
+	}
+	std::unique_ptr<ID3D11Texture2D*> texture;
+
+	(*textureResource)->QueryInterface<ID3D11Texture2D>(texture.get());
+
+	if (!texture)
+		return E_FAIL;
+	D3D11_TEXTURE2D_DESC textureDesc;
+	(*texture)->GetDesc(&textureDesc);
+
 
 	//Need to setup D3D fence from TD in order to initialize texture transfer.
 

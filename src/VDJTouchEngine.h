@@ -9,7 +9,7 @@
 
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
-
+#include <wrl.h>
 #include <string>
 #include <windows.h>
 #include <memory>

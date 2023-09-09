@@ -111,28 +111,30 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	ID3D11ShaderResourceView* textureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
 	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, &verts);
 
-	//Hving issues loading CComptr here, need to try to resolve this.
-	std::unique_ptr<ID3D11DeviceContext*> devContext; //use smart pointer to automatically release pointer and prevent memory leak
-	D3DDevice->GetImmediateContext(devContext.get());
 
-	std::unique_ptr<ID3D11Resource*> textureResource;
-	textureView->GetResource(textureResource.get());
+	//Hving issues loading CComptr here, need to try to resolve this.
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
+	D3DDevice->GetImmediateContext(&devContext);
+
+	Microsoft::WRL::ComPtr<ID3D11Resource> textureResource;
+	textureView->GetResource(&textureResource);
 	if (!textureResource) {
 		return E_FAIL;
 	}
-	std::unique_ptr<ID3D11Texture2D*> texture;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
 
-	(*textureResource)->QueryInterface<ID3D11Texture2D>(texture.get());
+	textureResource->QueryInterface<ID3D11Texture2D>(&texture);
 
 	if (!texture)
 		return E_FAIL;
 	D3D11_TEXTURE2D_DESC textureDesc;
-	(*texture)->GetDesc(&textureDesc);
+	texture->GetDesc(&textureDesc);
 
 
 	//Need to setup D3D fence from TD in order to initialize texture transfer.
 
 	//Need to texture transfer out.
+
 
 	return S_OK;
 }

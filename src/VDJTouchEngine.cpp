@@ -258,16 +258,22 @@ void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start
 	}
 }
 
+void VDJTouchEngine::linkCallback(TELinkEvent event, const char* identifier)
+{
+	switch (event) {
+		case TELinkEventAdded:
+			// A link has been added
+			break;
+
+	}
+}
+
 void VDJTouchEngine::eventCallbackStatic(TEInstance* instance, TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale, void* info)
 {
-	// This is the callback function that will be called by the TouchEngine when an event occurs
-	// 1. Get the instance of the VDJTouchEngine
-	// 2. Call the eventCallback function
+	static_cast<VDJTouchEngine*>(info)->eventCallback(event, result, start_time_value, start_time_scale, end_time_value, end_time_scale);
 }
 
 void VDJTouchEngine::linkCallbackStatic(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
 {
-	// This is the callback function that will be called by the TouchEngine when a link event occurs
-	// 1. Get the instance of the VDJTouchEngine
-	// 2. Call the linkCallback function
+	static_cast<VDJTouchEngine*>(info)->linkCallback(event, identifier);
 }

@@ -31,7 +31,7 @@ public:
 	static void linkCallbackStatic(TEInstance* instance, TELinkEvent event, const char* identifier, void* info);
 
 	void eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale);
-	void linkCallback(TELinkEvent event, const char* identifier, void* info);
+	void linkCallback(TELinkEvent event, const char* identifier);
 
 private:
 	int pFileButton = 0;

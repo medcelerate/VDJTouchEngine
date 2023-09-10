@@ -1,18 +1,14 @@
 #pragma once
-#ifndef VDJTOUCHENGINE_H
-#define VDJTOUCHENGINE_H
 
 // we include stdio.h only to use the sprintf() function
 // we define _CRT_SECURE_NO_WARNINGS for the warnings of the sprintf() function
-#define _CRT_SECURE_NO_WARNINGS
-
-
 #include <d3d11.h>
 #pragma comment(lib, "d3d11.lib")
+#define WIN32_LEAN_AND_MEAN
 #include <wrl.h>
 #include <string>
-#include <windows.h>
 #include <memory>
+#include <mutex>
 #include "VDJ/vdjVideo8.h"
 #include "TouchEngine/TouchObject.h"
 #include "TouchEngine/TEGraphicsContext.h"
@@ -34,8 +30,11 @@ public:
 	static void eventCallbackStatic(TEInstance* instance, TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale, void* info);
 	static void linkCallbackStatic(TEInstance* instance, TELinkEvent event, const char* identifier, void* info);
 
+	void eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale);
+	void linkCallback(TELinkEvent event, const char* identifier, void* info);
+
 private:
-	int pFileButton;
+	int pFileButton = 0;
 	std::string filePath;
 	TEInstance* instance = nullptr;
 	ID3D11Device* D3DDevice = nullptr;
@@ -50,6 +49,8 @@ private:
 	bool LoadTEFile();
 	bool isLoaded = false;
 	bool isFX = false;
+	bool isFrameBusy = false;
+	std::mutex frameMutex;
 
 
 	HRESULT OnVideoResize(int VidWidth, int VidHeight);
@@ -63,4 +64,3 @@ protected:
 		ID_BUTTON_1,
 	} ID_Interface;
 };
-#endif

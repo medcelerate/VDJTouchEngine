@@ -102,6 +102,8 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	HRESULT hr;
 	TVertex* verts = nullptr;
 
+	//Need to set this up.
+	auto result = TEInstanceStartFrameAtTime(instance, , 6000, false);
 
 	if (VideoWidth != width || VideoHeight != height)
 	{
@@ -130,6 +132,8 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	D3D11_TEXTURE2D_DESC textureDesc;
 	texture->GetDesc(&textureDesc);
 
+
+	devContext->CopyResource(D3DTextureInput, texture.Get());
 
 	//Need to setup D3D fence from TD in order to initialize texture transfer.
 
@@ -237,6 +241,21 @@ bool VDJTouchEngine::LoadTEFile()
 	}
 
 	return true;
+}
+
+void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
+{
+	switch (event) {
+		case TEEventInstanceDidLoad:
+			isLoaded = true;
+			// The tox file has been loaded into the TouchEngine
+			break;
+		case TEEventFrameDidFinish:
+			std::unique_lock<std::mutex> lock(frameMutex);
+			isFrameBusy = false;
+			// A frame has finished rendering
+			break;
+	}
 }
 
 void VDJTouchEngine::eventCallbackStatic(TEInstance* instance, TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale, void* info)

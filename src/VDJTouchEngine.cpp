@@ -2,6 +2,8 @@
 
 HRESULT VDJ_API VDJTouchEngine::OnLoad()
 {
+	while (!::IsDebuggerPresent())
+		::Sleep(100);
 	// ADD YOUR CODE HERE WHEN THE PLUGIN IS CALLED
 	pFileButton = 0;
 
@@ -14,6 +16,7 @@ HRESULT VDJ_API VDJTouchEngine::OnLoad()
 //-----------------------------------------------------------------------------
 HRESULT VDJ_API VDJTouchEngine::OnGetPluginInfo(TVdjPluginInfo8* infos)
 {
+	
 	infos->PluginName = "VDjTouchEngine";
 	infos->Author = "Evan Clark";
 	infos->Description = "Loads tox files as video FX";
@@ -46,7 +49,7 @@ HRESULT VDJ_API VDJTouchEngine::OnParameter(int id)
 	case ID_BUTTON_1:
 		if (pFileButton == 1)
 		{
-			// Function to open file dialog and return path
+			OpenFileDialog();
 		}
 		break;
 	}
@@ -103,7 +106,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	TVertex* verts = nullptr;
 
 	//Need to set this up.
-	auto result = TEInstanceStartFrameAtTime(instance, , 6000, false);
+	auto result = TEInstanceStartFrameAtTime(instance, 0, 6000, false);
 
 	if (VideoWidth != width || VideoHeight != height)
 	{
@@ -154,7 +157,30 @@ HRESULT VDJTouchEngine::OnVideoResize(int VidWidth, int VidHeight)
 
 bool VDJTouchEngine::OpenFileDialog()
 {
-	
+	IFileOpenDialog* pFileOpen;
+
+	// Create the FileOpenDialog object.
+	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+		IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+	if (SUCCEEDED(hr)) {
+		hr = pFileOpen->Show(nullptr);
+
+		if (SUCCEEDED(hr)) {
+			IShellItem* pItem;
+			hr = pFileOpen->GetResult(&pItem);
+			if (SUCCEEDED(hr)) {
+				LPWSTR filePathW;
+				hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &filePathW);
+				if (SUCCEEDED(hr)) {
+					std::wstring filePathWStr(filePathW);
+					filePath = std::string(filePathWStr.begin(), filePathWStr.end());
+					CoTaskMemFree(filePathW);
+				}
+				pItem->Release();
+			}
+		}
+	}
 	return true;
 }
 

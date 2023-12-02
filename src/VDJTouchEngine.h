@@ -9,6 +9,8 @@
 #include <string>
 #include <memory>
 #include <mutex>
+#include <windows.h>
+#include <shobjidl.h>
 #include "VDJ/vdjVideo8.h"
 #include "TouchEngine/TouchObject.h"
 #include "TouchEngine/TEGraphicsContext.h"

@@ -1,5 +1,5 @@
 #pragma once
-
+#include "VDJ/vdjVideo8.h"
 // we include stdio.h only to use the sprintf() function
 // we define _CRT_SECURE_NO_WARNINGS for the warnings of the sprintf() function
 #include <d3d11.h>
@@ -11,7 +11,6 @@
 #include <mutex>
 #include <windows.h>
 #include <shobjidl.h>
-#include "VDJ/vdjVideo8.h"
 #include "TouchEngine/TouchObject.h"
 #include "TouchEngine/TEGraphicsContext.h"
 #include "TouchEngine/TED3D11.h"
@@ -19,6 +18,8 @@
 class VDJTouchEngine : public IVdjPluginVideoFx8
 {
 public:
+	VDJTouchEngine();
+	~VDJTouchEngine();
 	HRESULT VDJ_API OnLoad();
 	HRESULT VDJ_API OnGetPluginInfo(TVdjPluginInfo8* infos);
 	ULONG VDJ_API Release();

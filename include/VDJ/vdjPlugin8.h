@@ -22,11 +22,11 @@
 
 #ifndef VdjPlugin8H
 #define VdjPlugin8H
-
+/*
 #define DllGetClassObject DllGetClassObject1
 #undef DllGetClassObject
 #pragma comment(linker, "/alternatename:DllGetClassObject=DllGetClassObject1")
-
+*/
 
 //////////////////////////////////////////////////////////////////////////
 // Platform specific defines for compatibility Mac/Windows
@@ -239,7 +239,7 @@ extern static const GUID IID_IVdjPluginStartStop8;
 #ifdef __cplusplus
 extern "C" {
 #endif
-	VDJ_EXPORT HRESULT VDJ_API DllGetClassObject1(const GUID &rclsid,const GUID &riid,void** ppObject);
+	VDJ_EXPORT HRESULT VDJ_API DllGetClassObject(const GUID &rclsid,const GUID &riid,void** ppObject);
 #ifdef __cplusplus
 }
 #endif

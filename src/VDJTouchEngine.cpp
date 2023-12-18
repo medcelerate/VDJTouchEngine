@@ -1,5 +1,18 @@
 #include "VDJTouchEngine.h"
 
+VDJTouchEngine::VDJTouchEngine()
+{
+	while (!::IsDebuggerPresent())
+		::Sleep(100);
+	int k = 1;
+	k++;
+}
+
+VDJTouchEngine::~VDJTouchEngine()
+{
+	return;
+}
+
 HRESULT VDJ_API VDJTouchEngine::OnLoad()
 {
 	while (!::IsDebuggerPresent())
@@ -17,7 +30,7 @@ HRESULT VDJ_API VDJTouchEngine::OnLoad()
 HRESULT VDJ_API VDJTouchEngine::OnGetPluginInfo(TVdjPluginInfo8* infos)
 {
 	
-	infos->PluginName = "VDjTouchEngine";
+	infos->PluginName = "VDJTouchEngine";
 	infos->Author = "Evan Clark";
 	infos->Description = "Loads tox files as video FX";
 	infos->Version = "1.0";
@@ -189,7 +202,7 @@ bool VDJTouchEngine::LoadTEFile()
 	// Load the tox file into the TouchEngine
 	// 1. Create a TouchEngine object
 
-	if (instance != nullptr)
+	if (instance == nullptr)
 	{
 
 

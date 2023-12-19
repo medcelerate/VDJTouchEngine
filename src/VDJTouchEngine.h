@@ -25,10 +25,12 @@ public:
 	ULONG VDJ_API Release();
 	HRESULT VDJ_API OnDeviceInit();
 	HRESULT VDJ_API OnDeviceClose();
-	HRESULT VDJ_API OnGetUserInterface(TVdjPluginInterface8* pluginInterface);
+	//HRESULT VDJ_API OnGetUserInterface(TVdjPluginInterface8* pluginInterface);
 	HRESULT VDJ_API OnParameter(int id);
 	HRESULT VDJ_API OnGetParameterString(int id, char* outParam, int outParamSize);
 	HRESULT VDJ_API OnDraw();
+	HRESULT VDJ_API OnStart();
+	HRESULT VDJ_API OnStop();
 
 	static void eventCallbackStatic(TEInstance* instance, TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale, void* info);
 	static void linkCallbackStatic(TEInstance* instance, TELinkEvent event, const char* identifier, void* info);

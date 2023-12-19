@@ -1,6 +1,6 @@
 #include "VDJTouchEngine.h"
 
-HRESULT VDJ_API DllGetClassObject(const GUID& rclsid, const GUID& riid, void** ppObject)
+VDJ_EXPORT HRESULT VDJ_API DllGetClassObject(const GUID& rclsid, const GUID& riid, void** ppObject)
 {
 	if (memcmp(&rclsid, &CLSID_VdjPlugin8, sizeof(GUID)) == 0 && memcmp(&riid, &IID_IVdjPluginVideoFx8, sizeof(GUID)) == 0)
 	{
@@ -13,3 +13,5 @@ HRESULT VDJ_API DllGetClassObject(const GUID& rclsid, const GUID& riid, void** p
 
 	return NO_ERROR;
 }
+
+

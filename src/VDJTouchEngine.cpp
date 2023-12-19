@@ -47,6 +47,7 @@ ULONG VDJ_API VDJTouchEngine::Release()
 	delete this;
 	return 0;
 }
+/*
 //---------------------------------------------------------------------------
 HRESULT VDJ_API VDJTouchEngine::OnGetUserInterface(TVdjPluginInterface8* pluginInterface)
 {
@@ -54,6 +55,8 @@ HRESULT VDJ_API VDJTouchEngine::OnGetUserInterface(TVdjPluginInterface8* pluginI
 
 	return S_OK;
 }
+
+*/
 //---------------------------------------------------------------------------
 HRESULT VDJ_API VDJTouchEngine::OnParameter(int id)
 {
@@ -165,6 +168,16 @@ HRESULT VDJTouchEngine::OnVideoResize(int VidWidth, int VidHeight)
 	VideoHeight = height;
 
 	return S_OK;
+}
+
+HRESULT VDJ_API VDJTouchEngine::OnStart()
+{
+	return NO_ERROR;
+}
+
+HRESULT VDJ_API VDJTouchEngine::OnStop()
+{
+	return NO_ERROR;
 }
 
 

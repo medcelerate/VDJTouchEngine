@@ -314,6 +314,10 @@ bool VDJTouchEngine::LoadTEFile()
 	}
 
 
+	while (isLoaded == false) {
+		::Sleep(100);
+	}
+
 	res = TEInstanceResume(instance);
 
 	if (res != TEResultSuccess)
@@ -321,16 +325,32 @@ bool VDJTouchEngine::LoadTEFile()
 		return false;
 	}
 
+	TouchObject<TEStringArray> linkGroups;
+	res = TEInstanceGetLinkGroups(instance, TEScopeInput, linkGroups.take());
+if (res != TEResultSuccess)
+	{
+		return false;
+	}
+
+	for (int i = 0; i < linkGroups->count; i++)
+	{
+		auto y = linkGroups->strings[i];
+	}
+
 	// Need to check for in and out params here. If there are none, then it is not an FX.
 	// If there are, then it is an FX and we need to set the in and out params.
-	TEVideoInput = TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr);
-	res = TEInstanceLinkSetTextureValue(instance, "/project1/input", &TEVideoInput, D3DContext);
+	TouchObject<TETexture> texture;
+	texture.take(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
+//TEVideoInputTexture = static_cast<TETexture*>(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
+//	TEVideoInputTexture = TEVideoInput;
+//	TELink
+	res = TEInstanceLinkSetTextureValue(instance, "op/inputxxx", texture, D3DContext);
 	 
 	if (res != TEResultSuccess)
 	{
 		isFX = false;
 	}
-	else
+	else 
 	{
 		isFX = true;
 		res = TEInstanceLinkGetTextureValue(instance, "output", TELinkValueCurrent, &TEOutputTexture);
@@ -369,9 +389,13 @@ void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start
 			// The tox file has been loaded into the TouchEngine
 			break;
 		case TEEventFrameDidFinish:
-			std::unique_lock<std::mutex> lock(frameMutex);
+		//	std::unique_lock<std::mutex> lock(frameMutex);
 			isFrameBusy = false;
 			// A frame has finished rendering
+			break;
+		case TEEventInstanceReady:
+			isReady = true;
+		// The TouchEngine is ready to start rendering frames
 			break;
 	}
 }

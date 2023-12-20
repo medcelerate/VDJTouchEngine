@@ -49,12 +49,14 @@ private:
 	TED3D11Context* D3DContext = nullptr;
 	TED3D11Texture* TEOutput = nullptr;
 	TED3D11Texture* TEVideoInput = nullptr;
+	TETexture* TEVideoInputTexture = nullptr;
 
 	bool OpenFileDialog();
 	bool LoadTEFile();
 	bool isLoaded = false;
 	bool isFX = false;
 	bool isFrameBusy = false;
+	bool isReady = false;
 	std::mutex frameMutex;
 
 

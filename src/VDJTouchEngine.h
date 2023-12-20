@@ -48,7 +48,7 @@ private:
 	TETexture * TEOutputTexture = nullptr;
 	TED3D11Context* D3DContext = nullptr;
 	TED3D11Texture* TEOutput = nullptr;
-	TED3D11Texture* TEInput = nullptr;
+	TED3D11Texture* TEVideoInput = nullptr;
 
 	bool OpenFileDialog();
 	bool LoadTEFile();
@@ -62,6 +62,9 @@ private:
 	int VideoWidth = 0;
 	int VideoHeight = 0;
 
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState>			mySampler;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	myTextureView;
 
 protected:
 	typedef enum _ID_Interface

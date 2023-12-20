@@ -2,10 +2,14 @@
 
 VDJTouchEngine::VDJTouchEngine()
 {
-	while (!::IsDebuggerPresent())
-		::Sleep(100);
-	int k = 1;
-	k++;
+	instance = nullptr;
+	D3DDevice = nullptr;
+	D3DTextureInput = nullptr;
+
+	TEOutputTexture = nullptr;
+	D3DContext = nullptr;
+	TEOutput = nullptr;
+	TEVideoInput = nullptr;
 }
 
 VDJTouchEngine::~VDJTouchEngine()
@@ -95,16 +99,74 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 	VideoWidth = width;
 	VideoHeight = height;
 
+	D3D11_TEXTURE2D_DESC description = { 0 };
+	description.Width = width;
+	description.Height = height;
+	description.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	description.Usage = D3D11_USAGE_DEFAULT;
+	description.CPUAccessFlags = 0;
+	description.MiscFlags = 0;
+	description.MipLevels = 0;
+	description.ArraySize = 1;
+	description.SampleDesc.Count = 1;
+	description.SampleDesc.Quality = 0;
+	description.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+	hr = D3DDevice->CreateTexture2D(&description, nullptr, &D3DTextureInput);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	D3DTextureInput->GetDesc(&description);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDescription;
+	ZeroMemory(&textureViewDescription, sizeof(textureViewDescription));
+	textureViewDescription.Format = description.Format;
+	textureViewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	textureViewDescription.Texture2D.MipLevels = description.MipLevels;
+	textureViewDescription.Texture2D.MostDetailedMip = 0;
+
+	hr = D3DDevice->CreateShaderResourceView(D3DTextureInput, &textureViewDescription, &myTextureView);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	D3D11_SAMPLER_DESC samplerDescription;
+	ZeroMemory(&samplerDescription, sizeof(samplerDescription));
+
+	samplerDescription.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+
+	samplerDescription.MaxAnisotropy = 0;
+	samplerDescription.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDescription.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDescription.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDescription.MipLODBias = 0.0f;
+	samplerDescription.MinLOD = 0;
+	samplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
+	samplerDescription.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDescription.BorderColor[0] = 0.0f;
+	samplerDescription.BorderColor[1] = 0.0f;
+	samplerDescription.BorderColor[2] = 0.0f;
+	samplerDescription.BorderColor[3] = 0.0f;
+
+	hr = D3DDevice->CreateSamplerState(&samplerDescription, &mySampler);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+	LoadTEFile();
 	return S_OK;
 }
 
 HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
-
+	
 	if (instance != nullptr)
 	{
 		TEInstanceSuspend(instance);
 		TEInstanceUnload(instance);
-		TERelease(&TEInput);
+		TERelease(&TEVideoInput);
 		TERelease(&TEOutput);
 		TERelease(&TEOutputTexture);
 		TERelease(&instance);
@@ -112,7 +174,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 		D3DContext = nullptr;
 		D3DDevice = nullptr;
 	}
-
+	
 	return S_OK;
 }
 
@@ -207,6 +269,7 @@ bool VDJTouchEngine::OpenFileDialog()
 			}
 		}
 	}
+	//LoadTEFile();
 	return true;
 }
 
@@ -249,12 +312,20 @@ bool VDJTouchEngine::LoadTEFile()
 	{
 		return false;
 	}
+
+
+	res = TEInstanceResume(instance);
+
+	if (res != TEResultSuccess)
+	{
+		return false;
+	}
+
 	// Need to check for in and out params here. If there are none, then it is not an FX.
 	// If there are, then it is an FX and we need to set the in and out params.
-
-	TEInput = TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr);
-	res = TEInstanceLinkSetTextureValue(instance, "input", TEInput, D3DContext);
-
+	TEVideoInput = TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr);
+	res = TEInstanceLinkSetTextureValue(instance, "/project1/input", &TEVideoInput, D3DContext);
+	 
 	if (res != TEResultSuccess)
 	{
 		isFX = false;
@@ -285,12 +356,7 @@ bool VDJTouchEngine::LoadTEFile()
 		}
 	}
 
-	res = TEInstanceResume(instance);
 
-	if (res != TEResultSuccess)
-	{
-		return false;
-	}
 
 	return true;
 }

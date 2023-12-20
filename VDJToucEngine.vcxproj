@@ -141,14 +141,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\stdafx.cpp" />
     <ClCompile Include="src\VDJTouchEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\stdafx.h" />
-    <ClInclude Include="src\targetver.h" />
     <ClInclude Include="src\VDJTouchEngine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

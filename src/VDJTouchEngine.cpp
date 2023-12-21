@@ -173,6 +173,8 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 		instance = nullptr;
 		D3DContext = nullptr;
 		D3DDevice = nullptr;
+		isLoaded = false;
+		isReady = false;
 	}
 	
 	return S_OK;
@@ -181,7 +183,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	HRESULT hr;
-	TVertex* verts = nullptr;
+	//TVertex* verts = nullptr;
 
 	//Need to set this up.
 	auto result = TEInstanceStartFrameAtTime(instance, 0, 6000, false);
@@ -191,34 +193,43 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		hr = OnVideoResize(width, height);
 	}
 
-	ID3D11ShaderResourceView* textureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
-	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, &verts);
-
-
-	//Hving issues loading CComptr here, need to try to resolve this.
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
 	D3DDevice->GetImmediateContext(&devContext);
 
-	Microsoft::WRL::ComPtr<ID3D11Resource> textureResource;
-	textureView->GetResource(&textureResource);
-	if (!textureResource) {
+	if (devContext == nullptr) {
 		return E_FAIL;
 	}
+
+	ID3D11ShaderResourceView* vdjShader = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
+	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&vdjShader, nullptr);
+
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11Resource> vdjResource;
+	vdjShader->GetResource(&vdjResource);
+
+	if (vdjResource == nullptr) {
+		return E_FAIL;
+	}
+
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
 
-	textureResource->QueryInterface<ID3D11Texture2D>(&texture);
+	hr = vdjResource->QueryInterface<ID3D11Texture2D>(&texture);
 
-	if (!texture)
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	if (!texture) {
 		return E_FAIL;
-	D3D11_TEXTURE2D_DESC textureDesc;
-	texture->GetDesc(&textureDesc);
-
+	}
 
 	devContext->CopyResource(D3DTextureInput, texture.Get());
-
-	//Need to setup D3D fence from TD in order to initialize texture transfer.
-
-	//Need to texture transfer out.
+	devContext->Flush();
 
 
 	return S_OK;
@@ -318,6 +329,11 @@ bool VDJTouchEngine::LoadTEFile()
 		::Sleep(100);
 	}
 
+	while (isReady == false)
+	{
+		::Sleep(100);
+	}
+
 	res = TEInstanceResume(instance);
 
 	if (res != TEResultSuccess)
@@ -339,12 +355,11 @@ if (res != TEResultSuccess)
 
 	// Need to check for in and out params here. If there are none, then it is not an FX.
 	// If there are, then it is an FX and we need to set the in and out params.
-	TouchObject<TETexture> texture;
-	texture.take(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
+	TEVideoInputTexture = TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr);
 //TEVideoInputTexture = static_cast<TETexture*>(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
 //	TEVideoInputTexture = TEVideoInput;
 //	TELink
-	res = TEInstanceLinkSetTextureValue(instance, "op/inputxxx", texture, D3DContext);
+	res = TEInstanceLinkSetTextureValue(instance, "op/in", TEVideoInputTexture, D3DContext);
 	 
 	if (res != TEResultSuccess)
 	{
@@ -353,7 +368,7 @@ if (res != TEResultSuccess)
 	else 
 	{
 		isFX = true;
-		res = TEInstanceLinkGetTextureValue(instance, "output", TELinkValueCurrent, &TEOutputTexture);
+		res = TEInstanceLinkGetTextureValue(instance, "op/out1", TELinkValueCurrent, &TEOutputTexture);
 
 		if (res != TEResultSuccess)
 		{
@@ -383,6 +398,14 @@ if (res != TEResultSuccess)
 
 void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
+	if (result == TEResultComponentErrors)
+	{
+		TouchObject<TEErrorArray> errors;
+		auto f = TEInstanceGetErrors(instance, errors.take());
+		auto y = "";
+		// The TouchEngine has encountered an error
+		// You can get the error message with TEInstanceGetError
+	}
 	switch (event) {
 		case TEEventInstanceDidLoad:
 			isLoaded = true;

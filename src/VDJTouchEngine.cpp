@@ -268,7 +268,31 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	std::unique_lock<std::mutex> lock(frameMutex);
 	isTouchFrameBusy = false;
 
-	return S_OK;
+
+	result = TEInstanceLinkGetTextureValue(instance, "op/out1", TELinkValueCurrent, TEVideoOutputTexture.take());
+
+	if (result != TEResultSuccess)
+	{
+		return S_FALSE;
+	}
+
+
+	if (TEVideoOutputTexture != nullptr) {
+		if (TETextureGetType(TEVideoOutputTexture) == TETextureTypeD3DShared)
+		{
+			result = TED3D11ContextGetTexture(D3DContext, static_cast<TED3DSharedTexture*>(TEVideoOutputTexture.get()), TEVideoOutputD3D.take());
+			if (result != TEResultSuccess)
+			{
+				return S_FALSE;
+			}
+		}
+		else
+		{
+			return S_FALSE;
+		}
+
+		return S_OK;
+	}
 }
 HRESULT VDJTouchEngine::OnVideoResize(int VidWidth, int VidHeight)
 {

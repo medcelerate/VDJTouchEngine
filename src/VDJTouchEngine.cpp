@@ -240,6 +240,11 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	devContext->CopyResource(D3DTextureInput, texture.Get());
 	devContext->Flush();
 
+	TouchObject<TELinkInfo> linkInfo;
+
+	auto y  = TEInstanceLinkGetInfo(instance, "op/vdjin", linkInfo.take());
+
+	TEVideoInputD3D.take(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
 
 	TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjin", TEVideoInputD3D, D3DContext);
 
@@ -267,6 +272,8 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	std::unique_lock<std::mutex> lock(frameMutex);
 	isTouchFrameBusy = false;
+
+
 
 
 	result = TEInstanceLinkGetTextureValue(instance, "op/out1", TELinkValueCurrent, TEVideoOutputTexture.take());

@@ -15,6 +15,26 @@
 #include "TouchEngine/TEGraphicsContext.h"
 #include "TouchEngine/TED3D11.h"
 
+
+typedef enum ParamType {
+
+	ParamTypeInt = 0,
+	ParamTypeFloat = 1,
+	ParamTypeString = 2,
+	ParamTypeButton = 3,
+	ParamTypeSwitch = 4,
+
+} ParamType;;
+
+typedef struct Paramter {
+	std::string identifier;
+	std::string name;
+	ParamType type;
+	double min = 0;
+	double max = 0;
+	double step = 0;
+};
+
 class VDJTouchEngine : public IVdjPluginVideoFx8
 {
 public:
@@ -76,10 +96,6 @@ private:
 
 
 	std::mutex frameMutex;
-
-
-	
-
 
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>			mySampler;

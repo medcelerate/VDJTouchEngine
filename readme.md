@@ -1,4 +1,5 @@
 ## VirtualDJ TouchEngine
+![DALL·E 2023-12-23 00 20 02 - 3D metallic text, colorful, logo with an alpha channel that Says Precisely TouchVDJ ](https://github.com/medcelerate/VDJTouchEngine/assets/32549017/066ea319-96c9-48ad-be9b-c76c9765942a)
 
 ## Under Development - Not ready for use
 

@@ -2,14 +2,6 @@
 
 VDJTouchEngine::VDJTouchEngine()
 {
-	instance = nullptr;
-	D3DDevice = nullptr;
-	D3DTextureInput = nullptr;
-
-	TEOutputTexture = nullptr;
-	D3DContext = nullptr;
-	TEOutput = nullptr;
-	TEVideoInput = nullptr;
 }
 
 VDJTouchEngine::~VDJTouchEngine()
@@ -19,13 +11,20 @@ VDJTouchEngine::~VDJTouchEngine()
 
 HRESULT VDJ_API VDJTouchEngine::OnLoad()
 {
-	while (!::IsDebuggerPresent())
-		::Sleep(100);
+
 	// ADD YOUR CODE HERE WHEN THE PLUGIN IS CALLED
 	pFileButton = 0;
 
 
 	DeclareParameterButton(&pFileButton, ID_BUTTON_1, "Load", "Load");
+
+
+
+	if (instance == nullptr)
+	{
+
+		LoadTouchEngine();
+	}
 
 
 	return S_OK;
@@ -89,6 +88,8 @@ HRESULT VDJ_API VDJTouchEngine::OnGetParameterString(int id, char* outParam, int
 
 HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 
+
+
 	HRESULT hr;
 	hr = GetDevice(VdjVideoEngineDirectX11, (void**)&D3DDevice);
 	if (FAILED(hr))
@@ -96,8 +97,12 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 		return hr;
 	}
 
+
+
 	VideoWidth = width;
 	VideoHeight = height;
+
+	LoadTEGraphicsContext(true);
 
 	D3D11_TEXTURE2D_DESC description = { 0 };
 	description.Width = width;
@@ -166,15 +171,8 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 	{
 		TEInstanceSuspend(instance);
 		TEInstanceUnload(instance);
-		TERelease(&TEVideoInput);
-		TERelease(&TEOutput);
-		TERelease(&TEOutputTexture);
-		TERelease(&instance);
-		instance = nullptr;
-		D3DContext = nullptr;
-		D3DDevice = nullptr;
-		isLoaded = false;
-		isReady = false;
+		D3DContext.reset();
+		D3DDevice->Release();
 	}
 	
 	return S_OK;
@@ -183,14 +181,19 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	HRESULT hr;
-	//TVertex* verts = nullptr;
 
-	//Need to set this up.
-	auto result = TEInstanceStartFrameAtTime(instance, 0, 6000, false);
+
+
+	if (!isTouchEngineReady) {
+		std::unique_lock<std::mutex> lock(frameMutex);
+		isTouchFrameBusy = false;
+		return S_FALSE;
+	}
 
 	if (VideoWidth != width || VideoHeight != height)
 	{
 		hr = OnVideoResize(width, height);
+
 	}
 
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
@@ -228,9 +231,42 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		return E_FAIL;
 	}
 
+
+	D3D11_TEXTURE2D_DESC desc;
+	ZeroMemory(&desc, sizeof(desc));
+	texture->GetDesc(&desc);
+
+
 	devContext->CopyResource(D3DTextureInput, texture.Get());
 	devContext->Flush();
 
+
+	TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjin", TEVideoInputD3D, D3DContext);
+
+	if (result != TEResultSuccess)
+	{
+		isPluginFX = false;
+	}
+
+
+	isTouchFrameBusy = true;
+	result = TEInstanceStartFrameAtTime(instance, 0, 6000, false);
+
+	if (result != TEResultSuccess)
+	{
+		std::unique_lock<std::mutex> lock(frameMutex);
+		isTouchFrameBusy = false;
+		return S_FALSE;
+	}
+
+
+	while (isTouchFrameBusy)
+	{
+
+	}
+
+	std::unique_lock<std::mutex> lock(frameMutex);
+	isTouchFrameBusy = false;
 
 	return S_OK;
 }
@@ -291,80 +327,46 @@ bool VDJTouchEngine::LoadTEFile()
 
 	if (instance == nullptr)
 	{
+		LoadTouchEngine();
 
-
-		TEResult res = TEInstanceCreate(eventCallbackStatic, linkCallbackStatic, this, &instance);
-		if (res != TEResultSuccess)
-		{
-			return false;
-		}
-		res = TED3D11ContextCreate(D3DDevice, &D3DContext);
-		if (res != TEResultSuccess)
-		{
-			return false;
-		}
-
-		res = TEInstanceAssociateGraphicsContext(instance, D3DContext);
-		if (res != TEResultSuccess)
-		{
-			return false;
-		}
 	}
 
 	// 2. Load the tox file into the TouchEngine
-	TEResult res = TEInstanceConfigure(instance, filePath.c_str(), TETimeExternal);
-	if (res != TEResultSuccess)
+	TEResult result = TEInstanceConfigure(instance, filePath.c_str(), TETimeExternal);
+	if (result != TEResultSuccess)
 	{
 		return false;
 	}
 
-	res = TEInstanceLoad(instance);
-	if (res != TEResultSuccess)
+	result = TEInstanceLoad(instance);
+	if (result != TEResultSuccess)
 	{
 		return false;
 	}
 
 
-	while (isLoaded == false) {
+	while (isTouchEngineLoaded == false) {
 		::Sleep(100);
 	}
 
-	while (isReady == false)
+	while (isTouchEngineReady == false)
 	{
 		::Sleep(100);
 	}
 
-	res = TEInstanceResume(instance);
+	result = TEInstanceResume(instance);
 
-	if (res != TEResultSuccess)
+	if (result != TEResultSuccess)
 	{
 		return false;
 	}
 
-	TouchObject<TEStringArray> linkGroups;
-	res = TEInstanceGetLinkGroups(instance, TEScopeInput, linkGroups.take());
-if (res != TEResultSuccess)
-	{
-		return false;
+
+	if (TEVideoInputD3D == nullptr) {
+		TEVideoInputD3D.take(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
 	}
 
-	for (int i = 0; i < linkGroups->count; i++)
-	{
-		auto y = linkGroups->strings[i];
-	}
-
-	// Need to check for in and out params here. If there are none, then it is not an FX.
-	// If there are, then it is an FX and we need to set the in and out params.
-	TEVideoInputTexture = TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr);
-//TEVideoInputTexture = static_cast<TETexture*>(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
-//	TEVideoInputTexture = TEVideoInput;
-//	TELink
-	res = TEInstanceLinkSetTextureValue(instance, "op/in", TEVideoInputTexture, D3DContext);
-	 
-	if (res != TEResultSuccess)
-	{
-		isFX = false;
-	}
+	/*
 	else 
 	{
 		isFX = true;
@@ -374,6 +376,7 @@ if (res != TEResultSuccess)
 		{
 			return false;
 		}
+
 
 		if (TEOutputTexture != nullptr) {
 			if (TETextureGetType(TEOutputTexture) == TETextureTypeD3DShared)
@@ -391,9 +394,46 @@ if (res != TEResultSuccess)
 		}
 	}
 
-
+	*/
 
 	return true;
+}
+
+void VDJTouchEngine::LoadTouchEngine() {
+
+	if (instance == nullptr) {
+
+		TEResult result = TEInstanceCreate(eventCallbackStatic, linkCallbackStatic, this, instance.take());
+		if (result != TEResultSuccess)
+		{
+			return;
+		}
+
+	}
+
+
+}
+
+bool VDJTouchEngine::LoadTEGraphicsContext(bool reload) {
+
+	if (instance == nullptr || reload) {
+
+		TEResult result = TED3D11ContextCreate(D3DDevice, D3DContext.take());
+		if (result != TEResultSuccess)
+		{
+			return false;
+		}
+
+		result = TEInstanceAssociateGraphicsContext(instance, D3DContext);
+		if (result != TEResultSuccess)
+		{
+			return false;
+		}
+
+	}
+
+	return true;
+
 }
 
 void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
@@ -408,23 +448,31 @@ void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start
 	}
 	switch (event) {
 		case TEEventInstanceDidLoad:
-			isLoaded = true;
+			if (LoadTEGraphicsContext()) {
+				isTouchEngineLoaded = true;
+			}
 			// The tox file has been loaded into the TouchEngine
 			break;
-		case TEEventFrameDidFinish:
-		//	std::unique_lock<std::mutex> lock(frameMutex);
-			isFrameBusy = false;
+		case TEEventFrameDidFinish: {
+			std::unique_lock<std::mutex> lock(frameMutex);
+			isTouchFrameBusy = false;
 			// A frame has finished rendering
 			break;
+		}
 		case TEEventInstanceReady:
-			isReady = true;
+			isTouchEngineReady = true;
 		// The TouchEngine is ready to start rendering frames
+			break;
+
+		case TEEventInstanceDidUnload:
+			isTouchEngineLoaded = false;
 			break;
 	}
 }
 
 void VDJTouchEngine::linkCallback(TELinkEvent event, const char* identifier)
 {
+	auto y = event;
 	switch (event) {
 		case TELinkEventAdded:
 			// A link has been added

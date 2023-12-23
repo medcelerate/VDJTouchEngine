@@ -39,34 +39,57 @@ public:
 	void linkCallback(TELinkEvent event, const char* identifier);
 
 private:
+
+	//Params for VirtualDJ
 	int pFileButton = 0;
-	std::string filePath;
-	TEInstance* instance = nullptr;
+
+	//VDJ textures and devices
 	ID3D11Device* D3DDevice = nullptr;
 	ID3D11Texture2D* D3DTextureInput = nullptr;
 
-	TETexture * TEOutputTexture = nullptr;
-	TED3D11Context* D3DContext = nullptr;
-	TED3D11Texture* TEOutput = nullptr;
-	TED3D11Texture* TEVideoInput = nullptr;
-	TETexture* TEVideoInputTexture = nullptr;
 
-	bool OpenFileDialog();
-	bool LoadTEFile();
-	bool isLoaded = false;
-	bool isFX = false;
-	bool isFrameBusy = false;
-	bool isReady = false;
+	int VideoWidth = 0;
+	int VideoHeight = 0;
+	std::string filePath;
+
+	//TouchEngineState
+	bool isTouchEngineLoaded = false;
+	bool isTouchEngineReady = false;
+	bool isPluginFX = false;
+	bool isTouchFrameBusy = false;
+
+
+	TouchObject<TEInstance> instance;
+
+
+	//TouchEngine objects
+	TouchObject<TED3D11Texture> TEVideoInputD3D;
+	TouchObject<TED3D11Texture> TEVideoOutputD3D;
+	TouchObject<TETexture> TEVideoInputTexture;
+	TouchObject<TETexture> TEVideoOutputTexture;
+	TouchObject<TED3D11Context> D3DContext;
+	
+	
+	//VDJ Functions
+	HRESULT OnVideoResize(int VidWidth, int VidHeight);
+
+
+
 	std::mutex frameMutex;
 
 
-	HRESULT OnVideoResize(int VidWidth, int VidHeight);
-	int VideoWidth = 0;
-	int VideoHeight = 0;
+	
+
 
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>			mySampler;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	myTextureView;
+
+
+	bool OpenFileDialog();
+	bool LoadTEFile();
+	void LoadTouchEngine();
+	bool LoadTEGraphicsContext(bool reload = false);
 
 protected:
 	typedef enum _ID_Interface

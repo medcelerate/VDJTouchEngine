@@ -199,6 +199,22 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	TouchObject<TELinkInfo> linkInfo;
 
+	TouchObject<TEStringArray> linkInfo2;
+
+	TouchObject<TEStringArray> linkInfo3;
+
+	TEInstanceGetLinkGroups(instance, TEScopeInput, linkInfo2.take());
+
+	for (int i = 0; i < linkInfo2->count; i++)
+	{
+		auto x = linkInfo2->strings[i];
+		TEInstanceLinkGetChildren(instance, linkInfo2->strings[i], linkInfo3.take());
+		for (int j = 0; j < linkInfo3->count; j++)
+		{
+			//auto y = linkInfo3->strings[j];
+		}
+	}
+
 	auto y  = TEInstanceLinkGetInfo(instance, "op/vdjin", linkInfo.take());
 
 	TEVideoInputD3D.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, (TED3D11TextureCallback)textureCallback, nullptr));
@@ -235,7 +251,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 
 
-	result = TEInstanceLinkGetTextureValue(instance, "op/out1", TELinkValueCurrent, TEVideoOutputTexture.take());
+	result = TEInstanceLinkGetTextureValue(instance, "op/vdjout", TELinkValueCurrent, TEVideoOutputTexture.take());
 
 	if (result != TEResultSuccess)
 	{
@@ -514,6 +530,80 @@ HRESULT VDJTouchEngine::CreateTexture() {
 	return S_OK;
 }
 
+void VDJTouchEngine::GetAllParameters()
+{
+	TouchObject<TEStringArray> groupLinkInfo;
+
+
+	TEResult result = TEInstanceGetLinkGroups(instance, TEScopeInput, groupLinkInfo.take());
+
+	if (result != TEResultSuccess)
+	{
+		return;
+	}
+
+
+
+	for (int i = 0; i < groupLinkInfo->count; i++)
+	{
+		TouchObject<TEStringArray> links;
+		result = TEInstanceLinkGetChildren(instance, groupLinkInfo->strings[i], links.take());
+		
+		if (result != TEResultSuccess)
+		{
+			return;
+		}
+
+		for (int j = 0; j < links->count; j++)
+		{
+			TouchObject<TELinkInfo> linkInfo;
+			result = TEInstanceLinkGetInfo(instance, links->strings[j], linkInfo.take());
+
+			if (result != TEResultSuccess)
+			{
+				return;
+			}
+
+
+			switch (linkInfo->type)
+			{
+				case TELinkTypeTexture:
+				{
+					continue;
+				}
+
+				case TELinkTypeDouble:
+				{
+					Parameter object;
+					object.identifier = linkInfo->identifier;
+					object.name = linkInfo->name;
+					object.type = ParamTypeFloat;
+					object.direction = Input;
+					object.max = 0;
+					object.min = 0;
+					object.step = 0.1;
+
+					result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
+					if (result != TEResultSuccess)
+					{
+						return;
+					}
+
+					result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &object.min, 0);
+					if (result != TEResultSuccess)
+					{
+						return;
+					}
+					parameters[linkInfo->identifier] = object;
+					break;
+
+				}
+			}
+
+		}
+
+	}
+}
 void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
 	if (result == TEResultComponentErrors)

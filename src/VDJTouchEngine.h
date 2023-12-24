@@ -7,6 +7,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <wrl.h>
 #include <string>
+#include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <windows.h>
@@ -15,6 +16,13 @@
 #include "TouchEngine/TEGraphicsContext.h"
 #include "TouchEngine/TED3D11.h"
 
+
+typedef enum InOutType {
+
+	Input = 0,
+	Output = 1,
+
+} InOutType;
 
 typedef enum ParamType {
 
@@ -26,10 +34,11 @@ typedef enum ParamType {
 
 } ParamType;;
 
-typedef struct Paramter {
+typedef struct Parameter {
 	std::string identifier;
 	std::string name;
 	ParamType type;
+	InOutType direction;
 	double min = 0;
 	double max = 0;
 	double step = 0;
@@ -73,6 +82,8 @@ private:
 	int VideoHeight = 0;
 	std::string filePath;
 
+	std::unordered_map<std::string, Parameter> parameters;
+
 	//TouchEngineState
 	bool isTouchEngineLoaded = false;
 	bool isTouchEngineReady = false;
@@ -95,7 +106,6 @@ private:
 	HRESULT OnVideoResize(int VidWidth, int VidHeight);
 
 
-
 	std::mutex frameMutex;
 
 
@@ -107,6 +117,7 @@ private:
 	bool LoadTEFile();
 	void LoadTouchEngine();
 	bool LoadTEGraphicsContext(bool reload = false);
+	void GetAllParameters();
 
 	HRESULT CreateTexture();
 

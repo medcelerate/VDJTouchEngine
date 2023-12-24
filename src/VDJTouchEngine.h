@@ -37,12 +37,14 @@ typedef enum ParamType {
 typedef struct Parameter {
 	std::string identifier;
 	std::string name;
+	int vdj_id = 0;
 	ParamType type;
 	InOutType direction;
 	double min = 0;
 	double max = 0;
 	double step = 0;
-};
+	char* value = nullptr;
+} Parameter;
 
 class VDJTouchEngine : public IVdjPluginVideoFx8
 {

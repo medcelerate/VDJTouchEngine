@@ -364,6 +364,7 @@ bool VDJTouchEngine::LoadTEFile()
 		::Sleep(100);
 	}
 
+
 	result = TEInstanceResume(instance);
 
 	if (result != TEResultSuccess)
@@ -587,7 +588,7 @@ void VDJTouchEngine::GetAllParameters()
 						object.max = 0;
 						object.min = 0;
 						object.step = 0.1;
-
+						object.value = new char[4];
 						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
 						if (result != TEResultSuccess)
 						{
@@ -608,6 +609,7 @@ void VDJTouchEngine::GetAllParameters()
 						object.max = 0;
 						object.min = 0;
 						object.step = 1;
+						object.value = new char[4];
 
 						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
 						if (result != TEResultSuccess)
@@ -624,11 +626,18 @@ void VDJTouchEngine::GetAllParameters()
 					}
 					case TELinkTypeBoolean:
 					{
-						object.type = ParamTypeSwitch;
+						if (linkInfo->intent == TELinkIntentMomentary) {
+							object.type = ParamTypeButton;
+						}
+						else
+						{
+							object.type = ParamTypeSwitch;
+						}
+
 						object.max = 1;
 						object.min = 0;
 						object.step = 1;
-						
+						object.value = new char[1];
 						break;
 					}
 				}
@@ -652,8 +661,24 @@ void VDJTouchEngine::GetAllParameters()
 
 	}
 
+	for (auto& param : parameters)
+	{
+		if (param.second.type == ParamTypeButton || param.second.type == ParamTypeSwitch)
+		{
+			DeclareParameterButton((int*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str());
+		}
+		else if (param.second.type == ParamTypeFloat)
+		{
+			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), param.second.max);
+		}
+		else if (param.second.type == ParamTypeInt)
+		{
+			//DeclareParameterSlider(&param.second.value, param.second.identifier.c_str(), param.second.name.c_str(), param.second.min, param.second.max, param.second.step);
+		}
+	}
 
-	TEResult result = TEInstanceGetLinkGroups(instance, TEScopeOutput, groupLinkInfo.take());
+
+	result = TEInstanceGetLinkGroups(instance, TEScopeOutput, groupLinkInfo.take());
 
 	if (result != TEResultSuccess)
 	{

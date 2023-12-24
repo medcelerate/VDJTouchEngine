@@ -13,6 +13,20 @@ Once loaded add the plugin from the effects menu and click the plus icon to open
 
 Click the load button to load a tox file.
 
+### Configuring a Tox File
+
+#### Video In
+Create a TOP of type In named vdjin. This will be the input texture from virtual DJ.
+
+#### Video Out
+Create a TOP of Type Out named vdjout. This will be the output texture to virtual DJ.
+
+#### Audio In
+Create a CHOP of type In named vdjin. This will be the input audio from virtual DJ.
+
+#### Audio Out
+Create a CHOP of type Out named vdjout. This will be the output audio to virtual DJ.
+
 ### To-Do
 - Add support for audio buffer injection.
 - Add ability for exposing parameters for control through effects panel

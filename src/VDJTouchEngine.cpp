@@ -215,22 +215,23 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		}
 	}
 
-	auto y  = TEInstanceLinkGetInfo(instance, "op/vdjin", linkInfo.take());
+	if (hasVideoInput) {
 
-	TEVideoInputD3D.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, (TED3D11TextureCallback)textureCallback, nullptr));
+		TEVideoInputD3D.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, (TED3D11TextureCallback)textureCallback, nullptr));
 
-	TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjin", TEVideoInputD3D, D3DContext);
-
-	
-
-	if (result != TEResultSuccess)
-	{
-		isPluginFX = false;
+		TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjin", TEVideoInputD3D, D3DContext);
+		if (result != TEResultSuccess)
+		{
+			isPluginFX = false;
+		}
 	}
 
 
+
+
+
 	isTouchFrameBusy = true;
-	result = TEInstanceStartFrameAtTime(instance, frameCount, 60, false);
+	TEResult result = TEInstanceStartFrameAtTime(instance, frameCount, 60, false);
 
 	if (result != TEResultSuccess)
 	{
@@ -249,9 +250,9 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	isTouchFrameBusy = false;
 	lock.unlock();
 
+	if (hasVideoOutput) {
 
-
-	result = TEInstanceLinkGetTextureValue(instance, "op/vdjout", TELinkValueCurrent, TEVideoOutputTexture.take());
+		result = TEInstanceLinkGetTextureValue(instance, "op/vdjout", TELinkValueCurrent, TEVideoOutputTexture.take());
 
 	/*
 	if (result != TEResultSuccess)
@@ -260,18 +261,19 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	}
 	*/
 
-	if (TEVideoOutputTexture != nullptr) {
-		if (TETextureGetType(TEVideoOutputTexture) == TETextureTypeD3DShared)
-		{
-			result = TED3D11ContextGetTexture(D3DContext, static_cast<TED3DSharedTexture*>(TEVideoOutputTexture.get()), TEVideoOutputD3D.take());
-			if (result != TEResultSuccess)
+		if (TEVideoOutputTexture != nullptr) {
+			if (TETextureGetType(TEVideoOutputTexture) == TETextureTypeD3DShared)
+			{
+				result = TED3D11ContextGetTexture(D3DContext, static_cast<TED3DSharedTexture*>(TEVideoOutputTexture.get()), TEVideoOutputD3D.take());
+				if (result != TEResultSuccess)
+				{
+					return S_FALSE;
+				}
+			}
+			else
 			{
 				return S_FALSE;
 			}
-		}
-		else
-		{
-			return S_FALSE;
 		}
 	}
 	devContext->Flush();
@@ -363,6 +365,9 @@ bool VDJTouchEngine::LoadTEFile()
 	{
 		::Sleep(100);
 	}
+
+
+	GetAllParameters();
 
 
 	result = TEInstanceResume(instance);
@@ -644,13 +649,13 @@ void VDJTouchEngine::GetAllParameters()
 				parameters[linkInfo->identifier] = object;
 			}
 			else if (linkInfo->domain == TELinkDomainOperator) {
-				if (linkInfo->name == "vdjin" && linkInfo->type == TELinkTypeTexture)
+				if (strcmp(linkInfo->name, "vdjin") == 0 && linkInfo->type == TELinkTypeTexture)
 				{
 					isPluginFX = true;
 					hasVideoInput = true;
 				}
 
-				else if (linkInfo->name == "vdjin" && linkInfo->type == TELinkTypeFloatBuffer)
+				else if (strcmp(linkInfo->name, "vdjin") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
 				{
 					hasAudioOutput = true;
 				}
@@ -705,11 +710,11 @@ void VDJTouchEngine::GetAllParameters()
 				return;
 			}
 
-			if (linkInfo->name == "vdjout" && linkInfo->type == TELinkTypeTexture)
+			if (strcmp(linkInfo->name, "vdjout") == 0 && linkInfo->type == TELinkTypeTexture)
 			{
 				hasVideoOutput = true;
 			}
-			else if (linkInfo->name == "vdjout" && linkInfo->type == TELinkTypeFloatBuffer)
+			else if (strcmp(linkInfo->name, "vdjout") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
 			{
 				hasAudioOutput = true;
 			}

@@ -528,6 +528,7 @@ HRESULT VDJTouchEngine::CreateTexture() {
 	}
 	*/
 
+
 	return S_OK;
 }
 
@@ -566,44 +567,133 @@ void VDJTouchEngine::GetAllParameters()
 			}
 
 
-			switch (linkInfo->type)
-			{
-				case TELinkTypeTexture:
-				{
-					continue;
-				}
+			if (linkInfo->domain == TELinkDomainParameter) {
+				Parameter object;
+				object.identifier = linkInfo->identifier;
+				object.name = linkInfo->name;
+				object.direction = Input;
 
-				case TELinkTypeDouble:
+				switch (linkInfo->type)
 				{
-					Parameter object;
-					object.identifier = linkInfo->identifier;
-					object.name = linkInfo->name;
-					object.type = ParamTypeFloat;
-					object.direction = Input;
-					object.max = 0;
-					object.min = 0;
-					object.step = 0.1;
-
-					result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
-					if (result != TEResultSuccess)
+					case TELinkTypeTexture:
 					{
-						return;
+						continue;
 					}
 
-					result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &object.min, 0);
-					if (result != TEResultSuccess)
+					case TELinkTypeDouble:
 					{
-						return;
-					}
-					parameters[linkInfo->identifier] = object;
-					break;
+					
+						object.type = ParamTypeFloat;
+						object.max = 0;
+						object.min = 0;
+						object.step = 0.1;
 
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
+						if (result != TEResultSuccess)
+						{
+							return;
+						}
+
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &object.min, 0);
+						if (result != TEResultSuccess)
+						{
+							return;
+						}
+						break;
+
+					}
+					case TELinkTypeInt:
+					{
+						object.type = ParamTypeInt;
+						object.max = 0;
+						object.min = 0;
+						object.step = 1;
+
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
+						if (result != TEResultSuccess)
+						{
+							return;
+						}
+
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &object.min, 0);
+						if (result != TEResultSuccess)
+						{
+							return;
+						}
+						break;
+					}
+					case TELinkTypeBoolean:
+					{
+						object.type = ParamTypeSwitch;
+						object.max = 1;
+						object.min = 0;
+						object.step = 1;
+						
+						break;
+					}
 				}
+				parameters[linkInfo->identifier] = object;
+			}
+			else if (linkInfo->domain == TELinkDomainOperator) {
+				if (linkInfo->name == "vdjin" && linkInfo->type == TELinkTypeTexture)
+				{
+					isPluginFX = true;
+					hasVideoInput = true;
+				}
+
+				else if (linkInfo->name == "vdjin" && linkInfo->type == TELinkTypeFloatBuffer)
+				{
+					hasAudioOutput = true;
+				}
+
 			}
 
 		}
 
 	}
+
+
+	TEResult result = TEInstanceGetLinkGroups(instance, TEScopeOutput, groupLinkInfo.take());
+
+	if (result != TEResultSuccess)
+	{
+		return;
+	}
+
+	for (int i = 0; i < groupLinkInfo->count; i++)
+	{
+		TouchObject<TEStringArray> links;
+		result = TEInstanceLinkGetChildren(instance, groupLinkInfo->strings[i], links.take());
+
+		if (result != TEResultSuccess)
+		{
+			return;
+		}
+
+		for (int j = 0; j < links->count; j++)
+		{
+			TouchObject<TELinkInfo> linkInfo;
+			result = TEInstanceLinkGetInfo(instance, links->strings[j], linkInfo.take());
+
+			if (result != TEResultSuccess)
+			{
+				return;
+			}
+
+			if (linkInfo->name == "vdjout" && linkInfo->type == TELinkTypeTexture)
+			{
+				hasVideoOutput = true;
+			}
+			else if (linkInfo->name == "vdjout" && linkInfo->type == TELinkTypeFloatBuffer)
+			{
+				hasAudioOutput = true;
+			}
+
+		}
+	}
+
+
+
 }
 void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {

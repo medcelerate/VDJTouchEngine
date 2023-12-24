@@ -253,11 +253,12 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	result = TEInstanceLinkGetTextureValue(instance, "op/vdjout", TELinkValueCurrent, TEVideoOutputTexture.take());
 
+	/*
 	if (result != TEResultSuccess)
 	{
 		return S_FALSE;
 	}
-
+	*/
 
 	if (TEVideoOutputTexture != nullptr) {
 		if (TETextureGetType(TEVideoOutputTexture) == TETextureTypeD3DShared)

@@ -54,6 +54,7 @@ public:
 
 	static void eventCallbackStatic(TEInstance* instance, TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale, void* info);
 	static void linkCallbackStatic(TEInstance* instance, TELinkEvent event, const char* identifier, void* info);
+	static void textureCallback(TED3D11Texture* texture, TEObjectEvent event, void* info);
 
 	void eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale);
 	void linkCallback(TELinkEvent event, const char* identifier);
@@ -89,7 +90,7 @@ private:
 	TouchObject<TETexture> TEVideoOutputTexture;
 	TouchObject<TED3D11Context> D3DContext;
 	
-	
+	int frameCount = 0;
 	//VDJ Functions
 	HRESULT OnVideoResize(int VidWidth, int VidHeight);
 
@@ -106,6 +107,8 @@ private:
 	bool LoadTEFile();
 	void LoadTouchEngine();
 	bool LoadTEGraphicsContext(bool reload = false);
+
+	HRESULT CreateTexture();
 
 protected:
 	typedef enum _ID_Interface

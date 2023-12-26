@@ -202,7 +202,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 		TEVideoInputD3D.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, (TED3D11TextureCallback)textureCallback, nullptr));
 
-		TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjin", TEVideoInputD3D, D3DContext);
+		TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjtexturein", TEVideoInputD3D, D3DContext);
 		if (result != TEResultSuccess)
 		{
 			isPluginFX = false;
@@ -233,7 +233,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	if (hasVideoOutput) {
 
-		result = TEInstanceLinkGetTextureValue(instance, "op/vdjout", TELinkValueCurrent, TEVideoOutputTexture.take());
+		result = TEInstanceLinkGetTextureValue(instance, "op/vdjtextureout", TELinkValueCurrent, TEVideoOutputTexture.take());
 
 	/*
 	if (result != TEResultSuccess)

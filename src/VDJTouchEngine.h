@@ -62,7 +62,7 @@ public:
 	HRESULT VDJ_API OnDraw();
 	HRESULT VDJ_API OnStart();
 	HRESULT VDJ_API OnStop();
-	HRESULT VDJ_API OnProcessSamples(float* buffer, int nb);
+	HRESULT VDJ_API OnAudioSamples(float* buffer, int nb);
 
 	static void eventCallbackStatic(TEInstance* instance, TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale, void* info);
 	static void linkCallbackStatic(TEInstance* instance, TELinkEvent event, const char* identifier, void* info);
@@ -108,6 +108,7 @@ private:
 	TouchObject<TETexture> TEVideoInputTexture;
 	TouchObject<TETexture> TEVideoOutputTexture;
 	TouchObject<TED3D11Context> D3DContext;
+	TouchObject<TEFloatBuffer> TEAudioInput;
 	
 	int frameCount = 0;
 	//VDJ Functions

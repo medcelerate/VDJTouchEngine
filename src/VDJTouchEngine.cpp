@@ -280,6 +280,20 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	frameCount++;
 	return S_OK;
 }
+
+HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
+{
+	if (hasAudioInput) {
+		if (TEAudioInput == nullptr) {
+			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 44100, nullptr));
+		}
+		TEResult result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudio", TEAudioInput);
+
+	}
+
+	return S_OK;
+}
+
 HRESULT VDJTouchEngine::OnVideoResize(int VidWidth, int VidHeight)
 {
 
@@ -649,13 +663,13 @@ void VDJTouchEngine::GetAllParameters()
 				parameters[linkInfo->identifier] = object;
 			}
 			else if (linkInfo->domain == TELinkDomainOperator) {
-				if (strcmp(linkInfo->name, "vdjin") == 0 && linkInfo->type == TELinkTypeTexture)
+				if (strcmp(linkInfo->name, "vdjtexturein") == 0 && linkInfo->type == TELinkTypeTexture)
 				{
 					isPluginFX = true;
 					hasVideoInput = true;
 				}
 
-				else if (strcmp(linkInfo->name, "vdjin") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
+				else if (strcmp(linkInfo->name, "vdjaudioin") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
 				{
 					hasAudioOutput = true;
 				}
@@ -710,11 +724,11 @@ void VDJTouchEngine::GetAllParameters()
 				return;
 			}
 
-			if (strcmp(linkInfo->name, "vdjout") == 0 && linkInfo->type == TELinkTypeTexture)
+			if (strcmp(linkInfo->name, "vdjtextureout") == 0 && linkInfo->type == TELinkTypeTexture)
 			{
 				hasVideoOutput = true;
 			}
-			else if (strcmp(linkInfo->name, "vdjout") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
+			else if (strcmp(linkInfo->name, "vdjaudioout") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
 			{
 				hasAudioOutput = true;
 			}

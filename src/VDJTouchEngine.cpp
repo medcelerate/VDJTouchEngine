@@ -227,7 +227,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	}
 
-	std::unique_lock<std::mutex> lock(frameMutex);
+	lock.lock();
 	isTouchFrameBusy = false;
 	lock.unlock();
 
@@ -269,7 +269,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		if (TEAudioInput == nullptr) {
 			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 2*nb, nullptr));
 		}
-		TEResult result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudio", TEAudioInput);
+		TEResult result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", TEAudioInput);
 
 	}
 	if (hasAudioOutput) {
@@ -659,7 +659,15 @@ void VDJTouchEngine::GetAllParameters()
 
 				else if (strcmp(linkInfo->name, "vdjaudioin") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
 				{
+					hasAudioInput = true;
+				}
+				else if (strcmp(linkInfo->name, "vdjaudioout") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
+				{
 					hasAudioOutput = true;
+				}
+				else if (strcmp(linkInfo->name, "vdjtextureout") == 0 && linkInfo->type == TELinkTypeTexture)
+				{
+					hasVideoOutput = true;
 				}
 
 			}

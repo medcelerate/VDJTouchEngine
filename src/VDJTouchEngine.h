@@ -110,14 +110,15 @@ private:
 	TouchObject<TETexture> TEVideoOutputTexture;
 	TouchObject<TED3D11Context> D3DContext;
 	TouchObject<TEFloatBuffer> TEAudioInput;
-	
+	TouchObject<TEFloatBuffer> TEAudioOutput;
+
 	int frameCount = 0;
 	//VDJ Functions
 	HRESULT OnVideoResize(int VidWidth, int VidHeight);
 
 
 	std::mutex frameMutex;
-
+	std::mutex audioMutex;
 
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>			mySampler;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	myTextureView;

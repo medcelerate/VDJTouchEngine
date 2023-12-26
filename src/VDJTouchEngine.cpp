@@ -266,10 +266,17 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 {
 	if (hasAudioInput) {
 		if (TEAudioInput == nullptr) {
-			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 44100, nullptr));
+			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 2*nb, nullptr));
 		}
 		TEResult result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudio", TEAudioInput);
 
+	}
+	if (hasAudioOutput) {
+		if (TEAudioOutput == nullptr) {
+			TEAudioOutput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 2*nb, nullptr));
+		}
+
+		TEResult
 	}
 
 	return S_OK;
@@ -759,9 +766,15 @@ void VDJTouchEngine::linkCallback(TELinkEvent event, const char* identifier)
 	auto y = event;
 	switch (event) {
 		case TELinkEventAdded:
+			if (hasAudioOutput) {
+				if (strcmp(identifier, "op/vdjaudioout") == 0) {
+					audioMutex.lock();
+					TEInstanceLinkGetFloatBufferValue(instance, identifier, TELinkValueCurrent, TEAudioOutput.take());
+					audioMutex.unlock();
+				}
+			}
 			// A link has been added
 			break;
-
 	}
 }
 

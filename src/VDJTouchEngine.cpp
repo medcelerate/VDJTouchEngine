@@ -266,23 +266,45 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 {
 	if (hasAudioInput) {
-		if (TEAudioInput == nullptr) {
-			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
-		}
-		float* leftbuffer = new float[nb];
-		float* rightbuffer = new float[nb];
+		TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
+
+		std::vector<float> vbuffer;
+		vbuffer.resize(2 * nb);
+
 		for (int i = 0; i < nb; i++)
 		{
-			leftbuffer[i] = buffer[2 * i];
-			rightbuffer[i] = buffer[(2 * i) + 1];
+			vbuffer[i] = buffer[2 * i];
+			vbuffer[nb + 1] = buffer[(2 * i) + 1];
+		//	vbuffer[0][i] = buffer[2 * i];
+		//	vbuffer[1][i] = buffer[(2 * i) + 1];
+		//	vleftbuffer[i] = buffer[2 * i];
+		//	vrightbuffer[i] = buffer[(2 * i) + 1];
+
+			//leftbuffer[i] = buffer[2 * i];
+			//rightbuffer[i] = buffer[(2 * i) + 1];
+
+		//	dbuffer[0][i] = buffer[2 * i];
+		//	dbuffer[1][i] = buffer[(2 * i) + 1];
+
+
 		}
-		const float * buffers[2] = { leftbuffer, rightbuffer };
-		TEResult result = TEFloatBufferSetValues(TEAudioInput, buffers, nb);
+		float* a = vbuffer.data();
+		float** channels = &a;
+
+		//std::array<const float*, 2> channels{ &buffer[2 * i], &buffer[(2 * i) + 1] };
+
+		TEResult result = TEFloatBufferSetValues(TEAudioInput, (const float**)channels, nb);
 
 		if (result != TEResultSuccess)
 		{
 			return S_FALSE;
 		}
+
+	//	std::array<const float*, 2> channels { vleftbuffer.data(), vrightbuffer.data()};
+
+		//const float* buffers[2] = { leftbuffer, rightbuffer };
+		
+
 
 		result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", TEAudioInput);
 
@@ -290,6 +312,11 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		{
 			return S_FALSE;
 		}
+		//delete[] dbuffer[0];
+		//delete[] dbuffer[1];
+		//delete[] dbuffer;
+		//delete[] leftbuffer;
+	//	delete[] rightbuffer;
 
 	}
 	if (hasAudioOutput) {
@@ -298,6 +325,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		}
 
 	}
+
 
 	return S_OK;
 }

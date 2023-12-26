@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <memory>
 #include <mutex>
+#include <array>
 #include <windows.h>
 #include <shobjidl.h>
 #include "TouchEngine/TouchObject.h"

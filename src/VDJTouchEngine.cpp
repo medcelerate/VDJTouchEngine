@@ -267,9 +267,29 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 {
 	if (hasAudioInput) {
 		if (TEAudioInput == nullptr) {
-			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 2*nb, nullptr));
+			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
 		}
-		TEResult result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", TEAudioInput);
+		float* leftbuffer = new float[nb];
+		float* rightbuffer = new float[nb];
+		for (int i = 0; i < nb; i++)
+		{
+			leftbuffer[i] = buffer[2 * i];
+			rightbuffer[i] = buffer[(2 * i) + 1];
+		}
+		const float * buffers[2] = { leftbuffer, rightbuffer };
+		TEResult result = TEFloatBufferSetValues(TEAudioInput, buffers, nb);
+
+		if (result != TEResultSuccess)
+		{
+			return S_FALSE;
+		}
+
+		result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", TEAudioInput);
+
+		if (result != TEResultSuccess)
+		{
+			return S_FALSE;
+		}
 
 	}
 	if (hasAudioOutput) {

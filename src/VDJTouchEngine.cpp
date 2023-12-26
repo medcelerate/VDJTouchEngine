@@ -193,27 +193,10 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	ZeroMemory(&desc, sizeof(desc));
 	texture->GetDesc(&desc);
 
-
 	//devContext->CopyResource(D3DTextureInput, texture.Get());
-	devContext->Flush();
+//	devContext->Flush();
 
-	TouchObject<TELinkInfo> linkInfo;
 
-	TouchObject<TEStringArray> linkInfo2;
-
-	TouchObject<TEStringArray> linkInfo3;
-
-	TEInstanceGetLinkGroups(instance, TEScopeInput, linkInfo2.take());
-
-	for (int i = 0; i < linkInfo2->count; i++)
-	{
-		auto x = linkInfo2->strings[i];
-		TEInstanceLinkGetChildren(instance, linkInfo2->strings[i], linkInfo3.take());
-		for (int j = 0; j < linkInfo3->count; j++)
-		{
-			//auto y = linkInfo3->strings[j];
-		}
-	}
 
 	if (hasVideoInput) {
 
@@ -226,11 +209,9 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		}
 	}
 
-
-
-
-
+	std::unique_lock<std::mutex> lock(frameMutex);
 	isTouchFrameBusy = true;
+	lock.unlock();
 	TEResult result = TEInstanceStartFrameAtTime(instance, frameCount, 60, false);
 
 	if (result != TEResultSuccess)

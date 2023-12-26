@@ -93,6 +93,7 @@ private:
 	bool isPluginFX = false;
 	bool isTouchFrameBusy = false;
 
+	//Touch file capabilities
 	bool hasVideoInput = false;
 	bool hasAudioInput = false;
 	bool hasVideoOutput = false;

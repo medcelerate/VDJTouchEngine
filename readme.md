@@ -16,16 +16,16 @@ Click the load button to load a tox file.
 ### Configuring a Tox File
 
 #### Video In
-Create a TOP of type In named vdjin. This will be the input texture from virtual DJ.
+Create a TOP of type In named vdjtexturein. This will be the input texture from virtual DJ.
 
 #### Video Out
-Create a TOP of Type Out named vdjout. This will be the output texture to virtual DJ.
+Create a TOP of Type Out named vdjtextureout. This will be the output texture to virtual DJ.
 
 #### Audio In
-Create a CHOP of type In named vdjin. This will be the input audio from virtual DJ.
+Create a CHOP of type In named vdjaudioin. This will be the input audio from virtual DJ.
 
 #### Audio Out
-Create a CHOP of type Out named vdjout. This will be the output audio to virtual DJ.
+Create a CHOP of type Out named vdjaudioout. This will be the output audio to virtual DJ.
 
 ### To-Do
 - Add support for audio buffer injection.

@@ -253,6 +253,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 			}
 			else
 			{
+				TEVideoOutputTexture.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
 				return S_FALSE;
 			}
 		}
@@ -276,7 +277,6 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			TEAudioOutput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 2*nb, nullptr));
 		}
 
-		TEResult
 	}
 
 	return S_OK;

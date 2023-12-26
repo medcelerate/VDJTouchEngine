@@ -79,6 +79,7 @@ private:
 	//VDJ textures and devices
 	ID3D11Device* D3DDevice = nullptr;
 	ID3D11Texture2D* D3DTextureInput = nullptr;
+	ID3D11Texture2D* D3DTextureOutput = nullptr;
 
 
 	int VideoWidth = 0;

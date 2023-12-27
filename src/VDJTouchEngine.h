@@ -119,6 +119,8 @@ private:
 	HRESULT OnVideoResize(int VidWidth, int VidHeight);
 
 
+
+
 	std::mutex frameMutex;
 	std::mutex audioMutex;
 

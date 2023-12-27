@@ -27,11 +27,17 @@ Create a CHOP of type In named vdjaudioin. This will be the input audio from vir
 #### Audio Out
 Create a CHOP of type Out named vdjaudioout. This will be the output audio to virtual DJ.
 
+#### Parameters In TD
+Create a Table DAT named vdjparameters. This will be the parameters exposed from virtual DJ.
+This will fill witht the first row being parameter names and the second row being the parameter values.
+There will be one row per deck in virtual DJ.
+
 ### To-Do
-- Add support for audio buffer injection.
+- Add support for audio buffer injection. - Done
 - Add ability for exposing parameters for control through effects panel
 - Add support for BPM control
-- Add better async file loading support.
+- Add support for video buffer injection
+- Add better async file loading support
 
 ### Learnings
 
@@ -47,3 +53,17 @@ However your draw call is implemented you should:
 4. Get output Linkages
 5. Draw
 
+
+To create a `const float**` in c++ to pass to the value funciton you can do the following:
+
+```c++
+std::vector<float> values;
+values.push_back(1.0f);
+values.push_back(2.0f);
+
+std::vector<const float*> valuesPtrs;
+valuesPtrs.push_back(values.data());
+
+Pass the valuesPtrs.data() to the value function.
+
+```

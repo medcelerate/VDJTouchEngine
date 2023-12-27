@@ -308,7 +308,27 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 	}
 	if (hasAudioOutput) {
 		if (TEAudioOutput == nullptr) {
-			TEAudioOutput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 2*nb, nullptr));
+			TEAudioOutput.take(TEFloatBufferCreate(SampleRate, 2, nb, nullptr));
+		}
+		TEResult result = TEInstanceLinkGetFloatBufferValue(instance, "op/vdjaudioout", TELinkValueCurrent, TEAudioOutput.take());
+
+		if (result != TEResultSuccess)
+		{
+			return S_FALSE;
+		}
+		uint32_t valueCount = TEFloatBufferGetValueCount(TEAudioOutput);
+		int32_t channelCount = TEFloatBufferGetChannelCount(TEAudioOutput);
+
+		if (channelCount != 2) {
+			return S_FALSE;
+		}
+
+		const float* const* values = TEFloatBufferGetValues(TEAudioOutput);
+
+		for (int i = 0; i < nb; i++)
+		{
+			buffer[i * 2] = values[0][i];
+			buffer[i * 2 + 1] = values[1][i];
 		}
 
 	}

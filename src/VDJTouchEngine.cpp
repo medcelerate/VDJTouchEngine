@@ -106,6 +106,17 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 
 	CreateTexture();
 
+	D3D11_BUFFER_DESC desc = { 0 };
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.ByteWidth = sizeof(TLVERTEX) * 6;
+	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	hr = D3DDevice->CreateBuffer(&desc, nullptr, &D3DVertexBuffer);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
 	//Attach texture to shader
 
 	LoadTEFile();
@@ -257,6 +268,8 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 				return S_FALSE;
 			}
 		}
+
+		D3DDevice->CreatePixelShader()
 	}
 	devContext->Flush();
 	frameCount++;
@@ -274,7 +287,6 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			TETest.take(TEFloatBufferCreateCopy(TEAudioInput));
 		}
 
-		//TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
 		std::vector<float> leftBuffer;
 		std::vector<float> rightBuffer;
 		std::vector<const float*> channels(2);
@@ -289,12 +301,31 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		channels[1] = rightBuffer.data();
 
 
- 		TEResult result = TEFloatBufferSetValues(TETest, channels.data(), nb);
+		TEResult result = TEFloatBufferSetValues(TETest, channels.data(), nb);
 
 		if (result != TEResultSuccess)
 		{
-			return S_FALSE;
+			return S_FALSE; 
 		}
+
+		if (totalSamples < SampleRate) {
+			TEResult result = TEFloatBufferSetStartTime(TETest, totalSamples);
+			if (result != TEResultSuccess)
+			{
+				return S_FALSE;
+			}
+			totalSamples += nb;
+		}
+		else {
+			totalSamples = 0;
+			TEResult result = TEFloatBufferSetStartTime(TETest, totalSamples);
+			if (result != TEResultSuccess)
+			{
+				return S_FALSE;
+			}
+			totalSamples += nb;
+		}
+
 
 
 

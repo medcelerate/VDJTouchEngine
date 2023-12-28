@@ -33,7 +33,7 @@ typedef enum ParamType {
 	ParamTypeButton = 3,
 	ParamTypeSwitch = 4,
 
-} ParamType;;
+} ParamType;
 
 typedef struct Parameter {
 	std::string identifier;
@@ -46,6 +46,33 @@ typedef struct Parameter {
 	double step = 0;
 	char* value = nullptr;
 } Parameter;
+
+struct TLVERTEX
+{
+	FLOAT x, y, z;
+	D3DXCOLOR colour;
+	FLOAT u, v;
+};
+
+struct D3DXCOLOR
+{
+public:
+	D3DXCOLOR() = default;
+	D3DXCOLOR(FLOAT r, FLOAT g, FLOAT b, FLOAT a)
+	{
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = a;
+	}
+
+	operator FLOAT* ()
+	{
+		return &r;
+	}
+
+	FLOAT r, g, b, a;
+};
 
 class VDJTouchEngine : public IVdjPluginVideoFx8
 {
@@ -79,6 +106,7 @@ private:
 
 	//VDJ textures and devices
 	ID3D11Device* D3DDevice = nullptr;
+	ID3D11Buffer* D3DVertexBuffer = nullptr;
 	ID3D11Texture2D* D3DTextureInput = nullptr;
 	ID3D11Texture2D* D3DTextureOutput = nullptr;
 
@@ -115,6 +143,7 @@ private:
 	TouchObject<TEFloatBuffer> TEAudioOutput;
 
 	int frameCount = 0;
+	int totalSamples = 0;
 	//VDJ Functions
 	HRESULT OnVideoResize(int VidWidth, int VidHeight);
 

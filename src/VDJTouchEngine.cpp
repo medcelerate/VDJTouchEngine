@@ -1,5 +1,35 @@
 #include "VDJTouchEngine.h"
 
+
+typedef struct D3DXCOLOR
+{
+public:
+	D3DXCOLOR() = default;
+	D3DXCOLOR(float r, float g, float b, float a)
+	{
+		this->r = r;
+		this->g = g;
+		this->b = b;
+		this->a = a;
+	}
+
+	operator float* ()
+	{
+		return &r;
+	}
+
+	float r, g, b, a;
+} D3DXCOLOR;
+
+struct TLVERTEX
+{
+	float x, y, z;
+	D3DXCOLOR colour;
+	float u, v;
+};
+
+
+
 VDJTouchEngine::VDJTouchEngine()
 {
 }
@@ -106,18 +136,10 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 
 	CreateTexture();
 
-	D3D11_BUFFER_DESC desc = { 0 };
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.ByteWidth = sizeof(TLVERTEX) * 6;
-	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	hr = D3DDevice->CreateBuffer(&desc, nullptr, &D3DVertexBuffer);
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-
+	CreateVertexBuffer();
 	//Attach texture to shader
+
+	CreateShaderResources();
 
 	LoadTEFile();
 	return S_OK;
@@ -223,7 +245,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	std::unique_lock<std::mutex> lock(frameMutex);
 	isTouchFrameBusy = true;
 	lock.unlock();
-	TEResult result = TEInstanceStartFrameAtTime(instance, frameCount, 60, false);
+	TEResult result = TEInstanceStartFrameAtTime(instance, frameCount, 6000, false);
 
 	if (result != TEResultSuccess)
 	{
@@ -244,32 +266,44 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	if (hasVideoOutput) {
 
-		result = TEInstanceLinkGetTextureValue(instance, "op/vdjtextureout", TELinkValueCurrent, TEVideoOutputTexture.take());
-
 	/*
 	if (result != TEResultSuccess)
 	{
 		return S_FALSE;
 	}
 	*/
+		TouchObject<TETexture> test;
+		result = TEInstanceLinkGetTextureValue(instance, "op/vdjtextureout", TELinkValueCurrent, test.take());
 
-		if (TEVideoOutputTexture != nullptr) {
-			if (TETextureGetType(TEVideoOutputTexture) == TETextureTypeD3DShared)
+		if (result == TEResultSuccess && test != nullptr) {
+
+			if (TETextureGetType(test) == TETextureTypeD3DShared && result == TEResultSuccess)
 			{
-				result = TED3D11ContextGetTexture(D3DContext, static_cast<TED3DSharedTexture*>(TEVideoOutputTexture.get()), TEVideoOutputD3D.take());
+				TouchObject<TED3D11Texture> texture;
+				result = TED3D11ContextGetTexture(D3DContext, static_cast<TED3DSharedTexture*>(test.get()), texture.take());
 				if (result != TEResultSuccess)
 				{
 					return S_FALSE;
 				}
-			}
-			else
-			{
-				TEVideoOutputTexture.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
-				return S_FALSE;
+
+				devContext->CopyResource(TED3D11TextureGetTexture(texture), D3DTextureOutput);
 			}
 		}
 
-		D3DDevice->CreatePixelShader()
+		if (result != TEResultSuccess)
+		{
+			return S_FALSE;
+		}
+		devContext->PSSetShader(D3DPixelShader, nullptr, 0);
+		devContext->PSSetShaderResources(0, 1, &D3DOutputTextureView);
+
+		UINT stride = sizeof(TLVERTEX);
+
+		UINT offset = 0;
+
+		devContext->IASetVertexBuffers(0, 1, &D3DVertexBuffer, &stride, &offset);
+		devContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		devContext->Draw(4, 0);
 	}
 	devContext->Flush();
 	frameCount++;
@@ -438,6 +472,13 @@ bool VDJTouchEngine::LoadTEFile()
 		return false;
 	}
 
+	result = TEInstanceSetFrameRate(instance, 60, 1);
+
+	if (result != TEResultSuccess)
+	{
+		return false;
+	}
+
 	result = TEInstanceLoad(instance);
 	if (result != TEResultSuccess)
 	{
@@ -470,35 +511,6 @@ bool VDJTouchEngine::LoadTEFile()
 		TEVideoInputD3D.take(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
 	}
 
-	/*
-	else 
-	{
-		isFX = true;
-		res = TEInstanceLinkGetTextureValue(instance, "op/out1", TELinkValueCurrent, &TEOutputTexture);
-
-		if (res != TEResultSuccess)
-		{
-			return false;
-		}
-
-
-		if (TEOutputTexture != nullptr) {
-			if (TETextureGetType(TEOutputTexture) == TETextureTypeD3DShared)
-			{
-				res = TED3D11ContextGetTexture(D3DContext, (TED3DSharedTexture*)TEOutputTexture, &TEOutput);
-				if (res != TEResultSuccess)
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-	}
-
-	*/
 
 	return true;
 }
@@ -514,7 +526,6 @@ void VDJTouchEngine::LoadTouchEngine() {
 		}
 
 	}
-
 
 }
 
@@ -563,6 +574,27 @@ HRESULT VDJTouchEngine::CreateTexture() {
 	description.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
 	HRESULT hr = D3DDevice->CreateTexture2D(&description, nullptr, &D3DTextureInput);
+	if (FAILED(hr))
+	{
+		switch (hr) {
+		case DXGI_ERROR_INVALID_CALL:
+			//str += "DXGI_ERROR_INVALID_CALL";
+			break;
+		case E_INVALIDARG:
+			//	str += "E_INVALIDARG";
+			break;
+		case E_OUTOFMEMORY:
+			//	str += "E_OUTOFMEMORY";
+			break;
+		default:
+			//	str += "Unlisted error";
+			break;
+		}
+		return hr;
+	}
+
+	hr = D3DDevice->CreateTexture2D(&description, nullptr, &D3DTextureOutput);
+
 	if (FAILED(hr))
 	{
 		switch (hr) {
@@ -625,6 +657,101 @@ HRESULT VDJTouchEngine::CreateTexture() {
 
 	return S_OK;
 }
+
+HRESULT VDJTouchEngine::CreateVertexBuffer() {
+	D3D11_BUFFER_DESC desc = { 0 };
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	desc.ByteWidth = sizeof(TLVERTEX) * 4;
+	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	HRESULT hr = D3DDevice->CreateBuffer(&desc, nullptr, &D3DVertexBuffer);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	UpdateVertexes();
+
+	D3DDevice->CreatePixelShader(PixelShaderCode, sizeof(PixelShaderCode), nullptr, &D3DPixelShader);
+
+	return S_OK;
+
+}
+
+HRESULT VDJTouchEngine::CreateShaderResources() {
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	ZeroMemory(&desc, sizeof(desc));
+	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Matching format is important
+	desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	desc.Texture2D.MostDetailedMip = 0;
+	desc.Texture2D.MipLevels = 1;
+
+	HRESULT hr = D3DDevice->CreateShaderResourceView(D3DTextureOutput, &desc, &D3DOutputTextureView);
+
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+
+	return S_OK;
+}
+
+bool VDJTouchEngine::UpdateVertexes() {
+
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
+	D3DDevice->GetImmediateContext(&devContext);
+
+	HRESULT hr = devContext->Map(D3DVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	TLVERTEX* vertices = (TLVERTEX*)mappedResource.pData;
+
+	const D3DXCOLOR color = D3DXCOLOR(1.f, 1.f, 1.f, 1.f);
+
+	vertices[0].colour = color;
+	vertices[0].x = 0;
+	vertices[0].y = 0;
+	vertices[0].z = 0;
+
+	vertices[1].colour = color;
+	vertices[1].x = width;
+	vertices[1].y = 0;
+	vertices[1].z = 0;
+
+	vertices[2].colour = color;
+	vertices[2].x = 0;
+	vertices[2].y = height;
+	vertices[2].z = 0;
+
+	vertices[3].colour = color;
+	vertices[3].x = 0;
+	vertices[3].y = height;
+	vertices[3].z = 0;
+
+	vertices[0].u = 0;
+	vertices[0].v = 0;
+
+	vertices[1].u = 1;
+	vertices[1].v = 0;
+
+	vertices[2].u = 0;
+	vertices[2].v = 1;
+
+	vertices[3].u = 1;
+	vertices[3].v = 1;
+
+	devContext->Unmap(D3DVertexBuffer, 0);
+
+	return true;
+
+}
+
 
 void VDJTouchEngine::GetAllParameters()
 {

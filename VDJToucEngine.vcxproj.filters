@@ -27,4 +27,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\PixelShader.hlsl">
+      <Filter>Source Files</Filter>
+    </FxCompile>
+  </ItemGroup>
 </Project>

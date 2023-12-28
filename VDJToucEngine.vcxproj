@@ -147,6 +147,13 @@
   <ItemGroup>
     <ClInclude Include="src\VDJTouchEngine.h" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="src\PixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelShader.h</HeaderFileOutput>
+    </FxCompile>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

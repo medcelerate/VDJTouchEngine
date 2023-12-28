@@ -16,6 +16,8 @@
 #include "TouchEngine/TouchObject.h"
 #include "TouchEngine/TEGraphicsContext.h"
 #include "TouchEngine/TED3D11.h"
+#include "PixelShader.h"
+
 
 
 typedef enum InOutType {
@@ -47,32 +49,7 @@ typedef struct Parameter {
 	char* value = nullptr;
 } Parameter;
 
-struct TLVERTEX
-{
-	FLOAT x, y, z;
-	D3DXCOLOR colour;
-	FLOAT u, v;
-};
 
-struct D3DXCOLOR
-{
-public:
-	D3DXCOLOR() = default;
-	D3DXCOLOR(FLOAT r, FLOAT g, FLOAT b, FLOAT a)
-	{
-		this->r = r;
-		this->g = g;
-		this->b = b;
-		this->a = a;
-	}
-
-	operator FLOAT* ()
-	{
-		return &r;
-	}
-
-	FLOAT r, g, b, a;
-};
 
 class VDJTouchEngine : public IVdjPluginVideoFx8
 {
@@ -104,11 +81,13 @@ private:
 	//Params for VirtualDJ
 	int pFileButton = 0;
 
-	//VDJ textures and devices
+	//VDJ textures and devices (Make these COM smart pointers)
 	ID3D11Device* D3DDevice = nullptr;
 	ID3D11Buffer* D3DVertexBuffer = nullptr;
 	ID3D11Texture2D* D3DTextureInput = nullptr;
 	ID3D11Texture2D* D3DTextureOutput = nullptr;
+	ID3D11PixelShader* D3DPixelShader = nullptr;
+	ID3D11ShaderResourceView* D3DOutputTextureView = nullptr;
 
 
 	int VideoWidth = 0;
@@ -162,8 +141,11 @@ private:
 	void LoadTouchEngine();
 	bool LoadTEGraphicsContext(bool reload = false);
 	void GetAllParameters();
+	bool UpdateVertexes();
 
 	HRESULT CreateTexture();
+	HRESULT CreateVertexBuffer();
+	HRESULT CreateShaderResources();
 
 protected:
 	typedef enum _ID_Interface

@@ -118,7 +118,8 @@ private:
 	TouchObject<TETexture> TEVideoInputTexture;
 	TouchObject<TETexture> TEVideoOutputTexture;
 	TouchObject<TED3D11Context> D3DContext;
-	TouchObject<TEFloatBuffer> TEAudioInput;
+	TouchObject<TEFloatBuffer> TEAudioInFloatBuffer1;
+	TouchObject<TEFloatBuffer> TEAudioInFloatBuffer2;
 	TouchObject<TEFloatBuffer> TEAudioOutput;
 
 	int frameCount = 0;

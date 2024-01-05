@@ -245,7 +245,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	std::unique_lock<std::mutex> lock(frameMutex);
 	isTouchFrameBusy = true;
 	lock.unlock();
-	TEResult result = TEInstanceStartFrameAtTime(instance, frameCount, 6000, false);
+	TEResult result = TEInstanceStartFrameAtTime(instance, totalSamples, SampleRate, false);
 
 	if (result != TEResultSuccess)
 	{
@@ -306,20 +306,34 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		devContext->Draw(4, 0);
 	}
 	devContext->Flush();
-	frameCount++;
+	frameCount += SampleRate;
 	return S_OK;
 }
 
 HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 {
 	if (hasAudioInput) {
-		TouchObject<TEFloatBuffer> TETest;
-		if (frameCount == 0) {
-			TEAudioInput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 1000, nullptr));
+		//TouchObject<TEFloatBuffer> FloatBuffer1;
+		//TouchObject<TEFloatBuffer> FloatBuffer2;
+		TouchObject<TEFloatBuffer> CurentBuffer;
+		if (totalSamples == 0) {
+			TEAudioInFloatBuffer1.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
+			CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer1));
+		}
+		else if (frameCount != 0 && TEAudioInFloatBuffer2 == nullptr && TEFloatBufferGetCapacity(TEAudioInFloatBuffer1) != nb) {
+			TEAudioInFloatBuffer2.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
+			CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer2));
 		}
 		else {
-			TETest.take(TEFloatBufferCreateCopy(TEAudioInput));
+			if (nb == TEFloatBufferGetCapacity(TEAudioInFloatBuffer1)) {
+				CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer1));
+			}
+			else {
+				CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer2));
+			}
 		}
+
+
 
 		std::vector<float> leftBuffer;
 		std::vector<float> rightBuffer;
@@ -335,7 +349,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		channels[1] = rightBuffer.data();
 
 
-		TEResult result = TEFloatBufferSetValues(TETest, channels.data(), nb);
+		TEResult result = TEFloatBufferSetValues(CurentBuffer, channels.data(), nb);
 
 		if (result != TEResultSuccess)
 		{
@@ -343,7 +357,8 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		}
 
 		if (totalSamples < SampleRate) {
-			TEResult result = TEFloatBufferSetStartTime(TETest, totalSamples);
+			totalSamples - SampleRate;
+			TEResult result = TEFloatBufferSetStartTime(CurentBuffer, totalSamples);
 			if (result != TEResultSuccess)
 			{
 				return S_FALSE;
@@ -351,8 +366,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			totalSamples += nb;
 		}
 		else {
-			totalSamples = 0;
-			TEResult result = TEFloatBufferSetStartTime(TETest, totalSamples);
+			TEResult result = TEFloatBufferSetStartTime(CurentBuffer, totalSamples);
 			if (result != TEResultSuccess)
 			{
 				return S_FALSE;
@@ -360,10 +374,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			totalSamples += nb;
 		}
 
-
-
-
-		result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", TETest);
+		result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", CurentBuffer);
 
 		if (result != TEResultSuccess)
 		{
@@ -472,7 +483,7 @@ bool VDJTouchEngine::LoadTEFile()
 		return false;
 	}
 
-	result = TEInstanceSetFrameRate(instance, 60, 1);
+	result = TEInstanceSetFrameRate(instance, SampleRate, 800);
 
 	if (result != TEResultSuccess)
 	{

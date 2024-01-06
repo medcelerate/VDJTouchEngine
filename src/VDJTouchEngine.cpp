@@ -266,27 +266,21 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	if (hasVideoOutput) {
 
-	/*
-	if (result != TEResultSuccess)
-	{
-		return S_FALSE;
-	}
-	*/
-		TouchObject<TETexture> test;
-		result = TEInstanceLinkGetTextureValue(instance, "op/vdjtextureout", TELinkValueCurrent, test.take());
+		TouchObject<TETexture> CurrentOutputTexture;
+		result = TEInstanceLinkGetTextureValue(instance, "op/vdjtextureout", TELinkValueCurrent, CurrentOutputTexture.take());
 
-		if (result == TEResultSuccess && test != nullptr) {
+		if (result == TEResultSuccess && CurrentOutputTexture != nullptr) {
 
-			if (TETextureGetType(test) == TETextureTypeD3DShared && result == TEResultSuccess)
+			if (TETextureGetType(CurrentOutputTexture) == TETextureTypeD3DShared && result == TEResultSuccess)
 			{
-				TouchObject<TED3D11Texture> texture;
-				result = TED3D11ContextGetTexture(D3DContext, static_cast<TED3DSharedTexture*>(test.get()), texture.take());
+				TouchObject<TED3D11Texture> CurrentD3DTargettexture;
+				result = TED3D11ContextGetTexture(D3DContext, static_cast<TED3DSharedTexture*>(CurrentOutputTexture.get()), CurrentD3DTargettexture.take());
 				if (result != TEResultSuccess)
 				{
 					return S_FALSE;
 				}
 
-				devContext->CopyResource(TED3D11TextureGetTexture(texture), D3DTextureOutput);
+				devContext->CopyResource(TED3D11TextureGetTexture(CurrentD3DTargettexture), texture.Get());
 			}
 		}
 
@@ -294,17 +288,8 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		{
 			return S_FALSE;
 		}
-		devContext->PSSetShader(D3DPixelShader, nullptr, 0);
-		devContext->PSSetShaderResources(0, 1, &D3DOutputTextureView);
-
-		UINT stride = sizeof(TLVERTEX);
-
-		UINT offset = 0;
-
-		devContext->IASetVertexBuffers(0, 1, &D3DVertexBuffer, &stride, &offset);
-		devContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		devContext->Draw(4, 0);
 	}
+
 	devContext->Flush();
 	frameCount += SampleRate;
 	return S_OK;
@@ -313,23 +298,21 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 {
 	if (hasAudioInput) {
-		//TouchObject<TEFloatBuffer> FloatBuffer1;
-		//TouchObject<TEFloatBuffer> FloatBuffer2;
-		TouchObject<TEFloatBuffer> CurentBuffer;
+		TouchObject<TEFloatBuffer> CurentInputBuffer;
 		if (totalSamples == 0) {
 			TEAudioInFloatBuffer1.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
-			CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer1));
+			CurentInputBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer1));
 		}
 		else if (frameCount != 0 && TEAudioInFloatBuffer2 == nullptr && TEFloatBufferGetCapacity(TEAudioInFloatBuffer1) != nb) {
 			TEAudioInFloatBuffer2.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, nb, nullptr));
-			CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer2));
+			CurentInputBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer2));
 		}
 		else {
 			if (nb == TEFloatBufferGetCapacity(TEAudioInFloatBuffer1)) {
-				CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer1));
+				CurentInputBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer1));
 			}
 			else {
-				CurentBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer2));
+				CurentInputBuffer.take(TEFloatBufferCreateCopy(TEAudioInFloatBuffer2));
 			}
 		}
 
@@ -349,7 +332,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		channels[1] = rightBuffer.data();
 
 
-		TEResult result = TEFloatBufferSetValues(CurentBuffer, channels.data(), nb);
+		TEResult result = TEFloatBufferSetValues(CurentInputBuffer, channels.data(), nb);
 
 		if (result != TEResultSuccess)
 		{
@@ -358,7 +341,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 
 		if (totalSamples < SampleRate) {
 			totalSamples - SampleRate;
-			TEResult result = TEFloatBufferSetStartTime(CurentBuffer, totalSamples);
+			TEResult result = TEFloatBufferSetStartTime(CurentInputBuffer, totalSamples);
 			if (result != TEResultSuccess)
 			{
 				return S_FALSE;
@@ -366,7 +349,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			totalSamples += nb;
 		}
 		else {
-			TEResult result = TEFloatBufferSetStartTime(CurentBuffer, totalSamples);
+			TEResult result = TEFloatBufferSetStartTime(CurentInputBuffer, totalSamples);
 			if (result != TEResultSuccess)
 			{
 				return S_FALSE;
@@ -374,7 +357,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			totalSamples += nb;
 		}
 
-		result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", CurentBuffer);
+		result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", CurentInputBuffer);
 
 		if (result != TEResultSuccess)
 		{
@@ -382,6 +365,8 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		}
 
 	}
+
+	//We can get this working last
 	if (hasAudioOutput) {
 		if (TEAudioOutput == nullptr) {
 			TEAudioOutput.take(TEFloatBufferCreate(SampleRate, 2, nb, nullptr));

@@ -38,6 +38,8 @@ There will be one row per deck in virtual DJ.
 - Add support for BPM control
 - Add support for video buffer injection
 - Add better async file loading support
+- Add support for dyanmic sample rate
+- Add support for system controlled framerates
 
 ### Learnings
 
@@ -65,5 +67,15 @@ std::vector<const float*> valuesPtrs;
 valuesPtrs.push_back(values.data());
 
 Pass the valuesPtrs.data() to the value function.
+
+```
+
+If doing audio it's useful to compute your frame rate and sample times based off the sample rate.
+
+```c++
+int SampleRate = 48000;
+result = TEInstanceSetFrameRate(instance, SampleRate, 800);
+
+TEInstanceStartFrameAtTime(instance, totalSamples, SampleRate, false);
 
 ```

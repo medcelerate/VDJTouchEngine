@@ -805,13 +805,13 @@ void VDJTouchEngine::GetAllParameters()
 						object.min = 0;
 						object.step = 0.1;
 						object.value = new char[4];
-						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<double>(object.max), 0);
 						if (result != TEResultSuccess)
 						{
 							return;
 						}
 
-						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &object.min, 0);
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<double>(object.min), 0);
 						if (result != TEResultSuccess)
 						{
 							return;
@@ -827,13 +827,13 @@ void VDJTouchEngine::GetAllParameters()
 						object.step = 1;
 						object.value = new char[4];
 
-						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &object.max, 0);
+						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<int>(object.max), 0);
 						if (result != TEResultSuccess)
 						{
 							return;
 						}
 
-						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &object.min, 0);
+						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<int>(object.max), 0);
 						if (result != TEResultSuccess)
 						{
 							return;
@@ -893,11 +893,11 @@ void VDJTouchEngine::GetAllParameters()
 		}
 		else if (param.second.type == ParamTypeFloat)
 		{
-			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), param.second.max);
+			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), std::get<double>(param.second.max));
 		}
 		else if (param.second.type == ParamTypeInt)
 		{
-			//DeclareParameterSlider(&param.second.value, param.second.identifier.c_str(), param.second.name.c_str(), param.second.min, param.second.max, param.second.step);
+			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), std::get<double>(param.second.max));
 		}
 	}
 

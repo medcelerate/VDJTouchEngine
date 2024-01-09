@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <memory>
 #include <mutex>
+#include <variant>
 #include <array>
 #include <windows.h>
 #include <shobjidl.h>
@@ -43,9 +44,9 @@ typedef struct Parameter {
 	int vdj_id = 0;
 	ParamType type;
 	InOutType direction;
-	double min = 0;
-	double max = 0;
-	double step = 0;
+	std::variant<double, int> min = 0;
+	std::variant<double, int> max = 0;
+	std::variant<double, int> step = 0;
 	char* value = nullptr;
 } Parameter;
 

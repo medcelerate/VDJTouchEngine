@@ -365,7 +365,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		}
 
 		if (totalSamples < SampleRate) {
-			totalSamples - SampleRate;
+			totalSamples = totalSamples - SampleRate; //Comment this if this break ssomething
 			TEResult result = TEFloatBufferSetStartTime(CurentInputBuffer, totalSamples);
 			if (result != TEResultSuccess)
 			{

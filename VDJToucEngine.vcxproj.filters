@@ -26,6 +26,9 @@
     <ClInclude Include="src\VDJTouchEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3Dvertex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="src\PixelShader.hlsl">

@@ -18,6 +18,7 @@
 #include "TouchEngine/TEGraphicsContext.h"
 #include "TouchEngine/TED3D11.h"
 #include "PixelShader.h"
+#include "D3Dvertex.h"
 
 
 
@@ -125,6 +126,8 @@ private:
 
 	int frameCount = 0;
 	int totalSamples = 0;
+	int TDOutputWidth = 0;
+	int TDOutputHeight = 0;
 	//VDJ Functions
 	HRESULT OnVideoResize(int VidWidth, int VidHeight);
 
@@ -144,6 +147,7 @@ private:
 	bool LoadTEGraphicsContext(bool reload = false);
 	void GetAllParameters();
 	bool UpdateVertexes();
+	void bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* textureView);
 
 	HRESULT CreateTexture();
 	HRESULT CreateVertexBuffer();

@@ -145,6 +145,7 @@
     <ClCompile Include="src\VDJTouchEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\D3Dvertex.h" />
     <ClInclude Include="src\VDJTouchEngine.h" />
   </ItemGroup>
   <ItemGroup>

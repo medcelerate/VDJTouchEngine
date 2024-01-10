@@ -280,7 +280,32 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 					return S_FALSE;
 				}
 
-				devContext->CopyResource(TED3D11TextureGetTexture(CurrentD3DTargettexture), texture.Get());
+				//Get the native texture from TD
+				auto tex = TED3D11TextureGetTexture(CurrentD3DTargettexture);
+
+				if (tex == nullptr) {
+					return S_FALSE;
+				}
+
+				D3D11_TEXTURE2D_DESC desc2;
+				ZeroMemory(&desc, sizeof(desc2));
+
+				tex->GetDesc(&desc2);
+
+				TDOutputWidth = desc2.Width;
+				TDOutputHeight = desc2.Height;
+
+				ID3D11ShaderResourceView* CurrenttextureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
+
+				D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+				ZeroMemory(&desc, sizeof(desc));
+				desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Matching format is important
+				desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				desc.Texture2D.MostDetailedMip = 0;
+				desc.Texture2D.MipLevels = 1;
+				HRESULT hr = D3DDevice->CreateShaderResourceView(tex, &desc, &CurrenttextureView);
+
+				bitblt(D3DDevice, CurrenttextureView);
 			}
 		}
 
@@ -694,59 +719,6 @@ HRESULT VDJTouchEngine::CreateShaderResources() {
 	return S_OK;
 }
 
-bool VDJTouchEngine::UpdateVertexes() {
-
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
-	D3DDevice->GetImmediateContext(&devContext);
-
-	HRESULT hr = devContext->Map(D3DVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(hr))
-	{
-		return false;
-	}
-
-	TLVERTEX* vertices = (TLVERTEX*)mappedResource.pData;
-
-	const D3DXCOLOR color = D3DXCOLOR(1.f, 1.f, 1.f, 1.f);
-
-	vertices[0].colour = color;
-	vertices[0].x = 0;
-	vertices[0].y = 0;
-	vertices[0].z = 0;
-
-	vertices[1].colour = color;
-	vertices[1].x = width;
-	vertices[1].y = 0;
-	vertices[1].z = 0;
-
-	vertices[2].colour = color;
-	vertices[2].x = 0;
-	vertices[2].y = height;
-	vertices[2].z = 0;
-
-	vertices[3].colour = color;
-	vertices[3].x = 0;
-	vertices[3].y = height;
-	vertices[3].z = 0;
-
-	vertices[0].u = 0;
-	vertices[0].v = 0;
-
-	vertices[1].u = 1;
-	vertices[1].v = 0;
-
-	vertices[2].u = 0;
-	vertices[2].v = 1;
-
-	vertices[3].u = 1;
-	vertices[3].v = 1;
-
-	devContext->Unmap(D3DVertexBuffer, 0);
-
-	return true;
-
-}
 
 
 void VDJTouchEngine::GetAllParameters()
@@ -897,6 +869,7 @@ void VDJTouchEngine::GetAllParameters()
 		}
 		else if (param.second.type == ParamTypeInt)
 		{
+			//There is currently an error throwing saying bad usage
 			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), std::get<double>(param.second.max));
 		}
 	}
@@ -941,9 +914,59 @@ void VDJTouchEngine::GetAllParameters()
 		}
 	}
 
-
-
 }
+
+
+
+void VDJTouchEngine::bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* textureView)
+{
+	int nbVertices = 6;
+
+	if (!D3DVertexBuffer)
+	{
+		D3D11_BUFFER_DESC bd{ 0 };
+		bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+		bd.ByteWidth = sizeof(TLVERTEX) * nbVertices;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+		HRESULT hr = d3dDev->CreateBuffer(&bd, nullptr, &D3DVertexBuffer);
+		if (!D3DVertexBuffer)
+			return;
+	}
+
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
+	D3DDevice->GetImmediateContext(&devContext);
+
+	D3D11_MAPPED_SUBRESOURCE ms;
+	HRESULT hr = devContext->Map(D3DVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);	// map the buffer
+	if (hr != S_OK)
+		return;
+
+	int srcX = 0, srcY = 0, srcWidth = TDOutputWidth, srcHeight = TDOutputHeight, dstX = 0, dstY = 0, dstWidth = width, dstHeight = height;
+	initImageSize(&srcX, &srcY, &srcWidth, &srcHeight, curTextureAR, 0, width, height, &dstX, &dstY, &dstWidth, &dstHeight);
+
+	TLVERTEX* vertices = (TLVERTEX*)ms.pData;
+	setVertexDst(vertices, (float)dstX, (float)dstY, (float)dstWidth, (float)dstHeight, RGB(255, 255, 255));
+	setVertexSrc(vertices, (float)srcX, (float)srcY, (float)srcWidth, (float)srcHeight, (float)TDOutputWidth, (float)TDOutputHeight);
+	devContext->Unmap(D3DVertexBuffer, 0);
+	UINT stride = sizeof(TLVERTEX);
+	UINT offset = 0;
+	devContext->IASetVertexBuffers(0, 1, &D3DVertexBuffer, &stride, &offset);
+
+	devContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	if (!D3DPixelShader)
+	{
+		hr = d3dDev->CreatePixelShader(PixelShaderCode, sizeof(PixelShaderCode), nullptr, &D3DPixelShader);
+	}
+	devContext->PSSetShader(D3DPixelShader, nullptr, 0);
+
+	devContext->PSSetShaderResources(0, 1, &textureView);
+
+	devContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	devContext->Draw(6, 0);
+}
+
+
 void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
 	if (result == TEResultComponentErrors)

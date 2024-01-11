@@ -146,7 +146,6 @@ private:
 	void LoadTouchEngine();
 	bool LoadTEGraphicsContext(bool reload = false);
 	void GetAllParameters();
-	bool UpdateVertexes();
 	void bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* textureView);
 
 	HRESULT CreateTexture();

@@ -1,34 +1,6 @@
 #include "VDJTouchEngine.h"
 
 
-typedef struct D3DXCOLOR
-{
-public:
-	D3DXCOLOR() = default;
-	D3DXCOLOR(float r, float g, float b, float a)
-	{
-		this->r = r;
-		this->g = g;
-		this->b = b;
-		this->a = a;
-	}
-
-	operator float* ()
-	{
-		return &r;
-	}
-
-	float r, g, b, a;
-} D3DXCOLOR;
-
-struct TLVERTEX
-{
-	float x, y, z;
-	D3DXCOLOR colour;
-	float u, v;
-};
-
-
 
 VDJTouchEngine::VDJTouchEngine()
 {
@@ -691,8 +663,6 @@ HRESULT VDJTouchEngine::CreateVertexBuffer() {
 		return hr;
 	}
 
-	UpdateVertexes();
-
 	D3DDevice->CreatePixelShader(PixelShaderCode, sizeof(PixelShaderCode), nullptr, &D3DPixelShader);
 
 	return S_OK;
@@ -752,11 +722,11 @@ void VDJTouchEngine::GetAllParameters()
 
 			if (result != TEResultSuccess)
 			{
-				return;
+				continue;
 			}
 
 
-			if (linkInfo->domain == TELinkDomainParameter) {
+			if (linkInfo->domain == TELinkDomainParameter && true == false) {
 				Parameter object;
 				object.identifier = linkInfo->identifier;
 				object.name = linkInfo->name;
@@ -780,13 +750,13 @@ void VDJTouchEngine::GetAllParameters()
 						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<double>(object.max), 0);
 						if (result != TEResultSuccess)
 						{
-							return;
+							continue;
 						}
 
 						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<double>(object.min), 0);
 						if (result != TEResultSuccess)
 						{
-							return;
+							continue;
 						}
 						break;
 
@@ -802,13 +772,13 @@ void VDJTouchEngine::GetAllParameters()
 						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<int>(object.max), 0);
 						if (result != TEResultSuccess)
 						{
-							return;
+							continue;
 						}
 
 						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<int>(object.max), 0);
 						if (result != TEResultSuccess)
 						{
-							return;
+							continue;
 						}
 						break;
 					}
@@ -943,7 +913,6 @@ void VDJTouchEngine::bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* text
 		return;
 
 	int srcX = 0, srcY = 0, srcWidth = TDOutputWidth, srcHeight = TDOutputHeight, dstX = 0, dstY = 0, dstWidth = width, dstHeight = height;
-	initImageSize(&srcX, &srcY, &srcWidth, &srcHeight, curTextureAR, 0, width, height, &dstX, &dstY, &dstWidth, &dstHeight);
 
 	TLVERTEX* vertices = (TLVERTEX*)ms.pData;
 	setVertexDst(vertices, (float)dstX, (float)dstY, (float)dstWidth, (float)dstHeight, RGB(255, 255, 255));

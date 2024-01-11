@@ -72,8 +72,66 @@ HRESULT VDJ_API VDJTouchEngine::OnParameter(int id)
 		{
 			OpenFileDialog();
 		}
+		return S_OK;
+	default:
 		break;
 	}
+
+	Parameter& param = parameters[id];
+
+	switch (param.type)
+	{
+		case ParamTypeButton:
+		{
+			if (param.direction == Input)
+			{
+				TEInstanceLinkSetBooleanValue(instance, param.identifier.c_str(), true);
+			}
+			else
+			{
+				TEInstanceLinkGetBooleanValue(instance, param.identifier.c_str(), TELinkValueCurrent, (bool*)param.value);
+			}
+			break;
+		}
+		case ParamTypeSwitch:
+		{
+			if (param.direction == Input)
+			{
+				TEInstanceLinkSetBooleanValue(instance, param.identifier.c_str(), true);
+			}
+			else
+			{
+				TEInstanceLinkGetBooleanValue(instance, param.identifier.c_str(), TELinkValueCurrent, (bool*)param.value);
+			}
+			break;
+		}
+		case ParamTypeFloat:
+		{
+			if (param.direction == Input)
+			{
+				TEInstanceLinkSetDoubleValue(instance, param.identifier.c_str(), (double*)param.value, 1);
+			}
+			else
+			{
+				TEInstanceLinkGetDoubleValue(instance, param.identifier.c_str(), TELinkValueCurrent, (double*)param.value, 1);
+			}
+			break;
+		}
+		case ParamTypeInt:
+		{
+			if (param.direction == Input)
+			{
+				TEInstanceLinkSetIntValue(instance, param.identifier.c_str(), (int*)param.value, 1); //Probably should replace this with variant
+			}
+			else
+			{
+				TEInstanceLinkGetIntValue(instance, param.identifier.c_str(), TELinkValueCurrent, (int*)param.value, 1);
+			}
+			break;
+		}
+
+	}
+
 
 	return S_OK;
 }
@@ -726,11 +784,12 @@ void VDJTouchEngine::GetAllParameters()
 			}
 
 
-			if (linkInfo->domain == TELinkDomainParameter && true == false) {
+			if (linkInfo->domain == TELinkDomainParameter) {
 				Parameter object;
 				object.identifier = linkInfo->identifier;
 				object.name = linkInfo->name;
 				object.direction = Input;
+				object.vdj_id = j+1; //OpenFile is always 0
 
 				switch (linkInfo->type)
 				{
@@ -743,17 +802,17 @@ void VDJTouchEngine::GetAllParameters()
 					{
 					
 						object.type = ParamTypeFloat;
-						object.max = 0;
-						object.min = 0;
+						object.max = 0.0;
+						object.min = 0.0;
 						object.step = 0.1;
 						object.value = new char[4];
-						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<double>(object.max), 0);
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<double>(object.max), 1);
 						if (result != TEResultSuccess)
 						{
 							continue;
 						}
 
-						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<double>(object.min), 0);
+						result = TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<double>(object.min), 1);
 						if (result != TEResultSuccess)
 						{
 							continue;
@@ -769,13 +828,13 @@ void VDJTouchEngine::GetAllParameters()
 						object.step = 1;
 						object.value = new char[4];
 
-						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<int>(object.max), 0);
+						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMaximum, &std::get<int>(object.max), 1);
 						if (result != TEResultSuccess)
 						{
 							continue;
 						}
 
-						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<int>(object.max), 0);
+						result = TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueMinimum, &std::get<int>(object.max), 1);
 						if (result != TEResultSuccess)
 						{
 							continue;
@@ -799,7 +858,7 @@ void VDJTouchEngine::GetAllParameters()
 						break;
 					}
 				}
-				parameters[linkInfo->identifier] = object;
+				parameters[object.vdj_id] = object;
 			}
 			else if (linkInfo->domain == TELinkDomainOperator) {
 				if (strcmp(linkInfo->name, "vdjtexturein") == 0 && linkInfo->type == TELinkTypeTexture)
@@ -835,12 +894,12 @@ void VDJTouchEngine::GetAllParameters()
 		}
 		else if (param.second.type == ParamTypeFloat)
 		{
-			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), std::get<double>(param.second.max));
+			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), std::get<double>(param.second.min));
 		}
 		else if (param.second.type == ParamTypeInt)
 		{
 			//There is currently an error throwing saying bad usage
-			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), std::get<double>(param.second.max));
+			DeclareParameterSlider((float*)param.second.value, param.second.vdj_id, param.second.identifier.c_str(), param.second.name.c_str(), static_cast<double>(std::get<int>(param.second.min)));
 		}
 	}
 

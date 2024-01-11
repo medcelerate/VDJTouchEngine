@@ -96,7 +96,7 @@ private:
 	int VideoHeight = 0;
 	std::string filePath;
 
-	std::unordered_map<std::string, Parameter> parameters;
+	std::unordered_map<int, Parameter> parameters;
 
 	//TouchEngineState
 	bool isTouchEngineLoaded = false;

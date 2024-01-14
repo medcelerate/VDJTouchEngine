@@ -34,12 +34,13 @@ There will be one row per deck in virtual DJ.
 
 ### To-Do
 - Add support for audio buffer injection. - Done
-- Add ability for exposing parameters for control through effects panel
+- Add ability for exposing parameters for control through effects panel - In Progress
 - Add support for BPM control
-- Add support for video buffer injection
+- Add support for video buffer injection - Readon works, writing does not yet
 - Add better async file loading support
 - Add support for dyanmic sample rate
 - Add support for system controlled framerates
+- Add support for table DAT input params.
 
 ### Learnings
 

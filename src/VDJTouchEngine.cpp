@@ -46,11 +46,12 @@ HRESULT VDJ_API VDJTouchEngine::OnLoad()
 
 	// ADD YOUR CODE HERE WHEN THE PLUGIN IS CALLED
 	pFileButton = 0;
-
+	pTouchReloadButton = 0;
 
 	DeclareParameterButton(&pFileButton, 0, "Load", "Load");
+	DeclareParameterButton(&pTouchReloadButton, 1, "Reload", "Reload");
 
-
+	totalSamples = -1 * SampleRate;
 
 	if (instance == nullptr)
 	{
@@ -77,6 +78,8 @@ HRESULT VDJ_API VDJTouchEngine::OnGetPluginInfo(TVdjPluginInfo8* infos)
 ULONG VDJ_API VDJTouchEngine::Release()
 {
 	// ADD YOUR CODE HERE WHEN THE PLUGIN IS RELEASED
+
+
 
 	delete this;
 	return 0;
@@ -417,23 +420,12 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			return S_FALSE; 
 		}
 
-		if (totalSamples < SampleRate) {
-			totalSamples = totalSamples - SampleRate; //Comment this if this break ssomething
-			TEResult result = TEFloatBufferSetStartTime(CurentInputBuffer, totalSamples);
-			if (result != TEResultSuccess)
-			{
-				return S_FALSE;
-			}
-			totalSamples += nb;
+		result = TEFloatBufferSetStartTime(CurentInputBuffer, totalSamples);
+		if (result != TEResultSuccess)
+		{
+			return S_FALSE;
 		}
-		else {
-			TEResult result = TEFloatBufferSetStartTime(CurentInputBuffer, totalSamples);
-			if (result != TEResultSuccess)
-			{
-				return S_FALSE;
-			}
-			totalSamples += nb;
-		}
+		totalSamples += nb;
 
 		result = TEInstanceLinkAddFloatBuffer(instance, "op/vdjaudioin", CurentInputBuffer);
 
@@ -447,28 +439,33 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 	//We can get this working last
 	if (hasAudioOutput) {
 		if (TEAudioOutput == nullptr) {
-			TEAudioOutput.take(TEFloatBufferCreate(SampleRate, 2, nb, nullptr));
+			TEAudioOutput.take(TEFloatBufferCreateTimeDependent(SampleRate, 2, 700, nullptr));
 		}
-		TEResult result = TEInstanceLinkGetFloatBufferValue(instance, "op/vdjaudioout", TELinkValueCurrent, TEAudioOutput.take());
+	//	TEResult result = TEInstanceLinkGetFloatBufferValue(instance, "op/vdjaudioout", TELinkValueCurrent, TEAudioOutput.take());
 
-		if (result != TEResultSuccess)
-		{
-			return S_FALSE;
-		}
 		uint32_t valueCount = TEFloatBufferGetValueCount(TEAudioOutput);
 		int32_t channelCount = TEFloatBufferGetChannelCount(TEAudioOutput);
+		if (valueCount < nb) {
+			return S_FALSE;
+		}
 
 		if (channelCount != 2) {
 			return S_FALSE;
 		}
 
+
 		const float* const* values = TEFloatBufferGetValues(TEAudioOutput);
+
+		if (values == nullptr) {
+			return S_FALSE;
+		}
 
 		for (int i = 0; i < nb; i++)
 		{
 			buffer[i * 2] = values[0][i];
 			buffer[i * 2 + 1] = values[1][i];
 		}
+
 
 	}
 
@@ -816,7 +813,7 @@ void VDJTouchEngine::GetAllParameters()
 				object.identifier = linkInfo->identifier;
 				object.name = linkInfo->name;
 				object.direction = Input;
-				object.vdj_id = j+1; //OpenFile is always 0
+				object.vdj_id = j+2; //OpenFile is always 0
 
 				switch (linkInfo->type)
 				{
@@ -897,14 +894,6 @@ void VDJTouchEngine::GetAllParameters()
 				else if (strcmp(linkInfo->name, "vdjaudioin") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
 				{
 					hasAudioInput = true;
-				}
-				else if (strcmp(linkInfo->name, "vdjaudioout") == 0 && linkInfo->type == TELinkTypeFloatBuffer)
-				{
-					hasAudioOutput = true;
-				}
-				else if (strcmp(linkInfo->name, "vdjtextureout") == 0 && linkInfo->type == TELinkTypeTexture)
-				{
-					hasVideoOutput = true;
 				}
 
 			}
@@ -1024,6 +1013,17 @@ void VDJTouchEngine::bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* text
 }
 
 
+void VDJTouchEngine::UnloadTouchEngine() {
+	if (instance != nullptr)
+	{
+		TEInstanceSuspend(instance);
+		TEInstanceUnload(instance);
+		D3DContext.reset();
+		D3DDevice->Release();
+	}
+}
+
+
 void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
 	
@@ -1074,14 +1074,15 @@ void VDJTouchEngine::linkCallback(TELinkEvent event, const char* identifier)
 	auto y = event;
 	switch (event) {
 		case TELinkEventAdded:
-			if (hasAudioOutput) {
-				if (strcmp(identifier, "op/vdjaudioout") == 0) {
+			// A link has been added
+			break;
+		case TELinkEventValueChange:
+			if (hasAudioOutput && strcmp(identifier, "op/vdjaudioout") == 0) {
 					audioMutex.lock();
+					TEAudioOutput.reset();
 					TEInstanceLinkGetFloatBufferValue(instance, identifier, TELinkValueCurrent, TEAudioOutput.take());
 					audioMutex.unlock();
-				}
 			}
-			// A link has been added
 			break;
 	}
 }

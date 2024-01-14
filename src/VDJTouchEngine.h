@@ -85,6 +85,7 @@ private:
 
 	//Params for VirtualDJ
 	int pFileButton = 0;
+	int pTouchReloadButton = 0;
 
 	//VDJ textures and devices (Make these COM smart pointers)
 	ID3D11Device* D3DDevice = nullptr;
@@ -150,6 +151,7 @@ private:
 	bool LoadTEGraphicsContext(bool reload = false);
 	void GetAllParameters();
 	void bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* textureView);
+	void UnloadTouchEngine();
 
 	HRESULT CreateTexture();
 	HRESULT CreateVertexBuffer();

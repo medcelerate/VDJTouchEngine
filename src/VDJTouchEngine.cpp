@@ -4,6 +4,7 @@
 
 VDJTouchEngine::VDJTouchEngine()
 {
+	logger = spdlog::basic_logger_mt("VDJTouchEngine", GetLogFilePath());
 }
 
 VDJTouchEngine::~VDJTouchEngine()
@@ -18,13 +19,12 @@ HRESULT VDJ_API VDJTouchEngine::OnLoad()
 	pFileButton = 0;
 
 
-	DeclareParameterButton(&pFileButton, ID_BUTTON_1, "Load", "Load");
+	DeclareParameterButton(&pFileButton, 0, "Load", "Load");
 
 
 
 	if (instance == nullptr)
 	{
-
 		LoadTouchEngine();
 	}
 
@@ -65,16 +65,12 @@ HRESULT VDJ_API VDJTouchEngine::OnGetUserInterface(TVdjPluginInterface8* pluginI
 //---------------------------------------------------------------------------
 HRESULT VDJ_API VDJTouchEngine::OnParameter(int id)
 {
-	switch (id)
-	{
-	case ID_BUTTON_1:
+	if (id == 0) {
 		if (pFileButton == 1)
 		{
 			OpenFileDialog();
 		}
 		return S_OK;
-	default:
-		break;
 	}
 
 	Parameter& param = parameters[id];
@@ -156,8 +152,6 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 	{
 		return hr;
 	}
-
-
 
 	VideoWidth = width;
 	VideoHeight = height;
@@ -495,6 +489,7 @@ bool VDJTouchEngine::OpenFileDialog()
 				if (SUCCEEDED(hr)) {
 					std::wstring filePathWStr(filePathW);
 					filePath = std::string(filePathWStr.begin(), filePathWStr.end());
+					logger->info("Loading file: {}", filePath);
 					CoTaskMemFree(filePathW);
 				}
 				pItem->Release();
@@ -513,7 +508,6 @@ bool VDJTouchEngine::LoadTEFile()
 	if (instance == nullptr)
 	{
 		LoadTouchEngine();
-
 	}
 
 	// 2. Load the tox file into the TouchEngine
@@ -569,7 +563,7 @@ bool VDJTouchEngine::LoadTEFile()
 void VDJTouchEngine::LoadTouchEngine() {
 
 	if (instance == nullptr) {
-
+		logger->info("Loading TouchEngine");
 		TEResult result = TEInstanceCreate(eventCallbackStatic, linkCallbackStatic, this, instance.take());
 		if (result != TEResultSuccess)
 		{
@@ -641,6 +635,7 @@ HRESULT VDJTouchEngine::CreateTexture() {
 			//	str += "Unlisted error";
 			break;
 		}
+		logger->error("Failed to create texture input");
 		return hr;
 	}
 
@@ -662,6 +657,7 @@ HRESULT VDJTouchEngine::CreateTexture() {
 		//	str += "Unlisted error";
 			break;
 		}
+		logger->error("Failed to create texture output");
 		return hr;
 	}
 	/*
@@ -718,6 +714,7 @@ HRESULT VDJTouchEngine::CreateVertexBuffer() {
 	HRESULT hr = D3DDevice->CreateBuffer(&desc, nullptr, &D3DVertexBuffer);
 	if (FAILED(hr))
 	{
+		logger->error("Failed to create vertex buffer");
 		return hr;
 	}
 
@@ -740,6 +737,7 @@ HRESULT VDJTouchEngine::CreateShaderResources() {
 
 	if (FAILED(hr))
 	{
+		logger->error("Failed to create shader resource view");
 		return hr;
 	}
 
@@ -908,6 +906,7 @@ void VDJTouchEngine::GetAllParameters()
 
 	if (result != TEResultSuccess)
 	{
+		logger->error("Failed to get output link groups");
 		return;
 	}
 
@@ -918,6 +917,7 @@ void VDJTouchEngine::GetAllParameters()
 
 		if (result != TEResultSuccess)
 		{
+			logger->error("Failed to get output link children");
 			return;
 		}
 
@@ -1059,4 +1059,22 @@ void VDJTouchEngine::linkCallbackStatic(TEInstance* instance, TELinkEvent event,
 void VDJTouchEngine::textureCallback(TED3D11Texture* texture, TEObjectEvent event, void* info) {
 	auto y = event;
 	return;
+}
+
+std::string GetLogFilePath() {
+	char* buffer = nullptr;
+	size_t size = 0;
+	_dupenv_s(&buffer, &size, "USERPROFILE");
+
+	if (buffer == nullptr)
+	{
+		return std::string();
+	}
+
+	std::string userpath(buffer);
+	free(buffer);
+
+	std::string path = userpath + "\\AppData\\Local\\VirtualDJ\\Plugins64\\VideoEffect\\TouchEngine.log";
+
+	return path;
 }

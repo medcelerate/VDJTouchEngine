@@ -14,6 +14,8 @@
 #include <array>
 #include <windows.h>
 #include <shobjidl.h>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
 #include "TouchEngine/TouchObject.h"
 #include "TouchEngine/TEGraphicsContext.h"
 #include "TouchEngine/TED3D11.h"
@@ -79,6 +81,7 @@ public:
 	void linkCallback(TELinkEvent event, const char* identifier);
 
 private:
+	std::shared_ptr<spdlog::logger> logger;
 
 	//Params for VirtualDJ
 	int pFileButton = 0;
@@ -152,9 +155,4 @@ private:
 	HRESULT CreateVertexBuffer();
 	HRESULT CreateShaderResources();
 
-protected:
-	typedef enum _ID_Interface
-	{
-		ID_BUTTON_1,
-	} ID_Interface;
 };

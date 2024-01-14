@@ -1,6 +1,35 @@
 #include "VDJTouchEngine.h"
 
+std::string GetLogFilePath() {
+	char* buffer = nullptr;
+	size_t size = 0;
+	_dupenv_s(&buffer, &size, "USERPROFILE");
 
+	if (buffer == nullptr)
+	{
+		return std::string();
+	}
+
+	std::string userpath(buffer);
+	free(buffer);
+
+	std::string path = userpath + "\\AppData\\Local\\VirtualDJ\\Plugins64\\VideoEffect\\TouchEngine.log";
+
+	return path;
+}
+
+std::string GetSeverityString(TESeverity severity) {
+	switch (severity)
+	{
+	case TESeverityWarning:
+		return "Warning";
+	case TESeverityError:
+		return "Error";
+	default:
+		return "Unknown";
+	}
+
+}
 
 VDJTouchEngine::VDJTouchEngine()
 {
@@ -997,11 +1026,22 @@ void VDJTouchEngine::bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* text
 
 void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
+	
+
 	if (result == TEResultComponentErrors)
 	{
 		TouchObject<TEErrorArray> errors;
-		auto f = TEInstanceGetErrors(instance, errors.take());
-		auto y = "";
+		TEResult result =  TEInstanceGetErrors(instance, errors.take());
+		if (result != TEResultSuccess)
+		{
+			return;
+		}
+
+		for (int i = 0; i < errors->count; i++)
+		{
+			logger->error("TouchEngine Error: Severity: {}, Location: {}, Description: {}", GetSeverityString(errors->errors[i].severity), errors->errors[i].location, errors->errors[i].description);
+		}
+
 		// The TouchEngine has encountered an error
 		// You can get the error message with TEInstanceGetError
 	}
@@ -1059,22 +1099,4 @@ void VDJTouchEngine::linkCallbackStatic(TEInstance* instance, TELinkEvent event,
 void VDJTouchEngine::textureCallback(TED3D11Texture* texture, TEObjectEvent event, void* info) {
 	auto y = event;
 	return;
-}
-
-std::string GetLogFilePath() {
-	char* buffer = nullptr;
-	size_t size = 0;
-	_dupenv_s(&buffer, &size, "USERPROFILE");
-
-	if (buffer == nullptr)
-	{
-		return std::string();
-	}
-
-	std::string userpath(buffer);
-	free(buffer);
-
-	std::string path = userpath + "\\AppData\\Local\\VirtualDJ\\Plugins64\\VideoEffect\\TouchEngine.log";
-
-	return path;
 }

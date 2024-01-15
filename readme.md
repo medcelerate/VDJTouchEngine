@@ -32,6 +32,11 @@ Create a Table DAT named vdjparameters. This will be the parameters exposed from
 This will fill witht the first row being parameter names and the second row being the parameter values.
 There will be one row per deck in virtual DJ.
 
+### V1 Release Requirements
+- Add BPM Input
+- Video Buffer In & Out
+- Audio Buffer In & Out
+
 ### To-Do
 - Add support for audio buffer injection. - Done
 - Add ability for exposing parameters for control through effects panel - In Progress

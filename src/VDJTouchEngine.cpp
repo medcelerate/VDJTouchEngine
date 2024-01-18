@@ -353,13 +353,18 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 				ID3D11ShaderResourceView* CurrenttextureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
 
-				D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-				ZeroMemory(&desc, sizeof(desc));
-				desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Matching format is important
-				desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-				desc.Texture2D.MostDetailedMip = 0;
-				desc.Texture2D.MipLevels = 1;
-				HRESULT hr = D3DDevice->CreateShaderResourceView(tex, &desc, &CurrenttextureView);
+				D3D11_SHADER_RESOURCE_VIEW_DESC desc3;
+				ZeroMemory(&desc, sizeof(desc3));
+				desc3.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Matching format is important
+				desc3.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				desc3.Texture2D.MostDetailedMip = 0;
+				desc3.Texture2D.MipLevels = 1;
+				HRESULT hr = D3DDevice->CreateShaderResourceView(tex, &desc3, &CurrenttextureView);
+
+				if (FAILED(hr))
+				{
+					return hr;
+				}
 
 				bitblt(D3DDevice, CurrenttextureView);
 			}
@@ -453,10 +458,11 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			return S_FALSE;
 		}
 
-
+		audioMutex.lock();
 		const float* const* values = TEFloatBufferGetValues(TEAudioOutput);
 
 		if (values == nullptr) {
+			audioMutex.unlock();
 			return S_FALSE;
 		}
 
@@ -465,7 +471,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 			buffer[i * 2] = values[0][i];
 			buffer[i * 2 + 1] = values[1][i];
 		}
-
+		audioMutex.unlock();
 
 	}
 

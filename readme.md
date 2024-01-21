@@ -5,6 +5,8 @@
 
 Aim is to be able to develop virtual DJ plugins in a similar way to the oldschool Quartz Composer plugins.
 
+### Current Builds
+https://drive.google.com/drive/folders/11oUVYvIBQTUOGlM0LBgdYDdV4gO7Uexd?usp=sharing
 ### Usage
 
 Download the latest release from the releases page and copy the 'VDJTouchEngine.dll' into `C:\Users\UserName\AppData\Local\VirtualDJ\Plugins64\VideoEffects`

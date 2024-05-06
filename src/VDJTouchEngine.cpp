@@ -34,6 +34,8 @@ std::string GetSeverityString(TESeverity severity) {
 VDJTouchEngine::VDJTouchEngine()
 {
 	logger = spdlog::basic_logger_mt("VDJTouchEngine", GetLogFilePath());
+
+
 }
 
 VDJTouchEngine::~VDJTouchEngine()
@@ -232,6 +234,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	}
 
+	if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
 
 	ID3D11ShaderResourceView* textureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
 	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, nullptr);
@@ -269,14 +272,9 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	if (!texture) {
 		return E_FAIL;
 	}
+	
 
-	hr = DrawDeck();
-
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-
+	
 
 	D3D11_TEXTURE2D_DESC desc;
 	ZeroMemory(&desc, sizeof(desc));
@@ -375,6 +373,13 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 			return S_FALSE;
 		}
 	}
+	hr = DrawDeck();
+
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+	if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
 
 	devContext->Flush();
 	frameCount += SampleRate;
@@ -990,6 +995,17 @@ void VDJTouchEngine::bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* text
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> devContext; //use smart pointer to automatically release pointer and prevent memory leak
 	D3DDevice->GetImmediateContext(&devContext);
 
+	if (!D3DPixelShader)
+	{
+		HRESULT hr = d3dDev->CreatePixelShader(PixelShaderCode, sizeof(PixelShaderCode), nullptr, &D3DPixelShader);
+		if (FAILED(hr))
+		{
+			return;
+		}
+	}
+
+
+
 	D3D11_MAPPED_SUBRESOURCE ms;
 	HRESULT hr = devContext->Map(D3DVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);	// map the buffer
 	if (hr != S_OK)
@@ -1001,18 +1017,21 @@ void VDJTouchEngine::bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* text
 	setVertexDst(vertices, (float)dstX, (float)dstY, (float)dstWidth, (float)dstHeight, RGB(255, 255, 255));
 	setVertexSrc(vertices, (float)srcX, (float)srcY, (float)srcWidth, (float)srcHeight, (float)TDOutputWidth, (float)TDOutputHeight);
 	devContext->Unmap(D3DVertexBuffer, 0);
+
 	UINT stride = sizeof(TLVERTEX);
 	UINT offset = 0;
-	devContext->IASetVertexBuffers(0, 1, &D3DVertexBuffer, &stride, &offset);
 
+	devContext->IASetVertexBuffers(0, 1, &D3DVertexBuffer, &stride, &offset);
 	devContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-	if (!D3DPixelShader)
-	{
-		hr = d3dDev->CreatePixelShader(PixelShaderCode, sizeof(PixelShaderCode), nullptr, &D3DPixelShader);
-	}
 	devContext->PSSetShader(D3DPixelShader, nullptr, 0);
 
 	devContext->PSSetShaderResources(0, 1, &textureView);
+
+
+
+
+
+
 
 	devContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	devContext->Draw(6, 0);

@@ -1,7 +1,7 @@
 #include "VDJTouchEngine.h"
 
 
-std::string get_path()
+std::string get_path(std::string DllName)
 {
 	char* buffer = nullptr;
 	size_t size = 0;
@@ -15,7 +15,7 @@ std::string get_path()
 	std::string userpath(buffer);
 	free(buffer);
 
-	std::string path = userpath + "\\AppData\\Local\\VirtualDJ\\Plugins64\\VideoEffect\\TouchEngine.dll";
+	std::string path = userpath + "\\AppData\\Local\\VirtualDJ\\Plugins64\\VideoEffect\\" + DllName;
 
 	return path;
 }
@@ -23,7 +23,7 @@ std::string get_path()
 
 VDJ_EXPORT HRESULT VDJ_API DllGetClassObject(const GUID& rclsid, const GUID& riid, void** ppObject)
 {
-	std::string UserPath = get_path();
+	std::string UserPath = get_path("TouchEngine.dll");
 
 	if (UserPath.empty())
 	{

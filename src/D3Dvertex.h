@@ -32,7 +32,7 @@ template<class T> void setVertexDst(T* vertices, float dstX, float dstY, float w
 	if (!vertices)
 		return;
 
-	const D3DXCOLOR color = D3DXCOLOR(GetRValue(col) / 255.f, GetGValue(col) / 255.f, GetBValue(col) / 255.f, 1.f);
+	const D3DXCOLOR color = D3DXCOLOR(1.f, 1.f, 1.f, 1.f);
 	vertices[0].colour = color;
 	vertices[0].x = dstX + width;
 	vertices[0].y = dstY;
@@ -68,7 +68,7 @@ template<class T> void setVertexSrc(T* vertices, float srcX, float srcY, float s
 {
 	if (!vertices)
 		return;
-
+	/*
 	vertices[0].u = (srcX + srcWidth) / textureWidth;
 	vertices[0].v = srcY / textureHeight;
 
@@ -86,4 +86,12 @@ template<class T> void setVertexSrc(T* vertices, float srcX, float srcY, float s
 
 	vertices[5].u = (srcX + srcWidth) / textureWidth;
 	vertices[5].v = srcY / textureHeight;
+	*/
+
+	vertices[0].u = 1; vertices[0].v = 0;
+	vertices[1].u = 1; vertices[1].v = 1;
+	vertices[2].u = 0; vertices[2].v = 1;
+	vertices[3].u = 0; vertices[3].v = 1;
+	vertices[4].u = 0; vertices[4].v = 0;
+	vertices[5].u = 1; vertices[5].v = 0;
 }

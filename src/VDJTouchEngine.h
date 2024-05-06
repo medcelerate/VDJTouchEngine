@@ -22,6 +22,10 @@
 #include "PixelShader.h"
 #include "D3Dvertex.h"
 
+#ifdef _DEBUG
+#include "renderdoc_app.h"
+#endif // _DEBUG
+
 
 
 typedef enum InOutType {
@@ -81,6 +85,9 @@ public:
 	void linkCallback(TELinkEvent event, const char* identifier);
 
 private:
+#ifdef _DEBUG
+	RENDERDOC_API_1_1_2* rdoc_api = nullptr;
+#endif // _DEBUG
 	std::shared_ptr<spdlog::logger> logger;
 
 	//Params for VirtualDJ

@@ -234,8 +234,6 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	}
 
-	if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
-
 	ID3D11ShaderResourceView* textureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
 	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, nullptr);
 
@@ -379,7 +377,6 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	{
 		return hr;
 	}
-	if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
 
 	devContext->Flush();
 	frameCount += SampleRate;
@@ -745,7 +742,7 @@ HRESULT VDJTouchEngine::CreateTexture() {
 HRESULT VDJTouchEngine::CreateVertexBuffer() {
 	D3D11_BUFFER_DESC desc = { 0 };
 	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.ByteWidth = sizeof(TLVERTEX) * 4;
+	desc.ByteWidth = sizeof(TLVERTEX) * 6;
 	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	HRESULT hr = D3DDevice->CreateBuffer(&desc, nullptr, &D3DVertexBuffer);
@@ -1011,18 +1008,67 @@ void VDJTouchEngine::bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* text
 	if (hr != S_OK)
 		return;
 
-	int srcX = 0, srcY = 0, srcWidth = TDOutputWidth, srcHeight = TDOutputHeight, dstX = 0, dstY = 0, dstWidth = width, dstHeight = height;
+	//int srcX = 0, srcY = 0, srcWidth = TDOutputWidth, srcHeight = TDOutputHeight, dstX = 0, dstY = 0, dstWidth = width, dstHeight = height;
 
 	TLVERTEX* vertices = (TLVERTEX*)ms.pData;
-	setVertexDst(vertices, (float)dstX, (float)dstY, (float)dstWidth, (float)dstHeight, RGB(255, 255, 255));
-	setVertexSrc(vertices, (float)srcX, (float)srcY, (float)srcWidth, (float)srcHeight, (float)TDOutputWidth, (float)TDOutputHeight);
+	//setVertexDst(vertices, (float)dstX, (float)dstY, (float)dstWidth, (float)dstHeight, RGB(255, 255, 255));
+	//setVertexSrc(vertices, (float)srcX, (float)srcY, (float)srcWidth, (float)srcHeight, (float)TDOutputWidth, (float)TDOutputHeight);
+
+#define x0 0
+#define y0 0
+#define x1 1
+#define y1 1
+#define	pos_x ((x0)*width)
+#define pos_y ((y0)*height)
+
+#define	pos_width (((x1)-(x0))*width)
+#define pos_height (((y1)-(y0))*height)
+
+	const D3DXCOLOR color = D3DXCOLOR(1.f, 1.f, 1.f, 1.f);
+	vertices[0].colour = color;
+	vertices[0].x = (FLOAT)pos_width + pos_x * 2;
+	vertices[0].y = pos_y;// 0;
+	vertices[0].z = 0.0f;
+
+	vertices[1].colour = color;
+	vertices[1].x = (FLOAT)pos_width + pos_x * 2;
+	vertices[1].y = (FLOAT)pos_height + pos_y * 2;
+	vertices[1].z = 0.0f;
+
+	vertices[2].colour = color;
+	vertices[2].x = pos_x;// 0;
+	vertices[2].y = (FLOAT)pos_height + pos_y * 2;
+	vertices[2].z = 0.0f;
+
+	vertices[3].colour = color;
+	vertices[3].x = 1 + pos_x;// 1;
+	vertices[3].y = (FLOAT)pos_height + pos_y * 2;
+	vertices[3].z = 0.0f;
+
+	vertices[4].colour = color;
+	vertices[4].x = pos_x;// 0;
+	vertices[4].y = pos_y;//0;
+	vertices[4].z = 0.0f;
+
+	vertices[5].colour = color;
+	vertices[5].x = (FLOAT)pos_width + pos_x * 2;
+	vertices[5].y = pos_y;// 0;
+	vertices[5].z = 0.0f;
+
+	vertices[0].u = 1; vertices[0].v = 0;
+	vertices[1].u = 1; vertices[1].v = 1;
+	vertices[2].u = 0; vertices[2].v = 1;
+	vertices[3].u = 0; vertices[3].v = 1;
+	vertices[4].u = 0; vertices[4].v = 0;
+	vertices[5].u = 1; vertices[5].v = 0;
+
 	devContext->Unmap(D3DVertexBuffer, 0);
 
 	UINT stride = sizeof(TLVERTEX);
 	UINT offset = 0;
 
 	devContext->IASetVertexBuffers(0, 1, &D3DVertexBuffer, &stride, &offset);
-	devContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	//devContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 	devContext->PSSetShader(D3DPixelShader, nullptr, 0);
 
 	devContext->PSSetShaderResources(0, 1, &textureView);

@@ -19,7 +19,7 @@
 #include "TouchEngine/TouchObject.h"
 #include "TouchEngine/TEGraphicsContext.h"
 #include "TouchEngine/TED3D11.h"
-#include "PixelShader.h"
+#include "..\PixelShader.h"
 #include "D3Dvertex.h"
 
 #ifdef _DEBUG

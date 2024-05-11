@@ -10,4 +10,5 @@ SamplerState SampleType
 float4 main(float4 position : SV_Position, float4 color : COLOR, float2 texcoord : TEXCOORD) : SV_TARGET0
 {
     return shaderTexture.Sample(SampleType, texcoord);
+
 }

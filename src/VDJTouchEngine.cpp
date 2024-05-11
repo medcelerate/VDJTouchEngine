@@ -106,6 +106,14 @@ HRESULT VDJ_API VDJTouchEngine::OnParameter(int id)
 		}
 		return S_OK;
 	}
+	else if (id == 1)
+	{
+		if (pTouchReloadButton == 1)
+		{
+			LoadTEFile();
+		}
+		return S_OK;
+	}
 
 	Parameter& param = parameters[id];
 
@@ -180,11 +188,12 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 
 
 
-	HRESULT hr;
-	hr = GetDevice(VdjVideoEngineDirectX11, (void**)&D3DDevice);
-	if (FAILED(hr))
+	HRESULT Result;
+	Result = GetDevice(VdjVideoEngineDirectX11, (void**)&D3DDevice);
+	if (FAILED(Result))
 	{
-		return hr;
+		logger->error("Failed to get D3D device");
+		return Result;
 	}
 
 	VideoWidth = width;
@@ -199,7 +208,14 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceInit() {
 
 	CreateShaderResources();
 
-	LoadTEFile();
+	bool Status = LoadTEFile();
+
+	if (!Status)
+	{
+		logger->error("Failed to load TE file");
+		return E_FAIL;
+	}
+
 	return S_OK;
 }
 
@@ -218,7 +234,19 @@ HRESULT VDJ_API VDJTouchEngine::OnDeviceClose() {
 
 HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
-	HRESULT hr;
+	HRESULT Result;
+
+	Result = DrawDeck();
+
+	if (FAILED(Result))
+	{
+		return Result;
+	}
+
+	if (!isTouchEngineReady) {
+		return S_FALSE;
+	
+	}
 
 	TVertex* vertices = nullptr;
 
@@ -230,16 +258,16 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	if (VideoWidth != width || VideoHeight != height)
 	{
-		hr = OnVideoResize(width, height);
+		Result = OnVideoResize(width, height);
 
 	}
 
 	ID3D11ShaderResourceView* textureView = nullptr; //GetTexture doesn't AddRef, so doesn't need to be released
-	hr = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, nullptr);
+	Result = GetTexture(VdjVideoEngineDirectX11, (void**)&textureView, nullptr);
 
-	if (FAILED(hr))
+	if (FAILED(Result))
 	{
-		return hr;
+		return Result;
 	}
 
 
@@ -260,18 +288,16 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
 
-	hr = textureResource->QueryInterface<ID3D11Texture2D>(&texture);
+	Result = textureResource->QueryInterface<ID3D11Texture2D>(&texture);
 
-	if (FAILED(hr))
+	if (FAILED(Result))
 	{
-		return hr;
+		return Result;
 	}
 
 	if (!texture) {
 		return E_FAIL;
 	}
-	
-
 	
 
 	D3D11_TEXTURE2D_DESC desc;
@@ -287,6 +313,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 
 		TEVideoInputD3D.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, (TED3D11TextureCallback)textureCallback, nullptr));
 
+		//Exception being thornw here
 		TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjtexturein", TEVideoInputD3D, D3DContext);
 		if (result != TEResultSuccess)
 		{
@@ -339,6 +366,18 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 					return S_FALSE;
 				}
 
+				Microsoft::WRL::ComPtr <IDXGIKeyedMutex> keyedMutex;
+				tex->QueryInterface<IDXGIKeyedMutex>(&keyedMutex);
+
+				TESemaphore* semaphore = nullptr;
+				uint64_t waitValue = 0;
+				result = TEInstanceGetTextureTransfer(instance, CurrentOutputTexture, &semaphore, &waitValue);
+				if (result != TEResultSuccess)
+				{
+					return S_FALSE;
+				}
+				keyedMutex->AcquireSync(waitValue, INFINITE);
+
 				D3D11_TEXTURE2D_DESC desc2;
 				ZeroMemory(&desc, sizeof(desc2));
 
@@ -363,6 +402,17 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 				}
 
 				bitblt(D3DDevice, CurrenttextureView);
+
+				keyedMutex->ReleaseSync(waitValue+1);
+
+				result = TEInstanceAddTextureTransfer(instance, CurrentOutputTexture, semaphore, waitValue+1);
+				if (result != TEResultSuccess)
+				{
+					return S_FALSE;
+				}
+
+				keyedMutex->Release();
+
 			}
 		}
 
@@ -371,12 +421,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 			return S_FALSE;
 		}
 	}
-	hr = DrawDeck();
 
-	if (FAILED(hr))
-	{
-		return hr;
-	}
 
 	devContext->Flush();
 	frameCount += SampleRate;
@@ -443,6 +488,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 
 	}
 
+	/*
 	//We can get this working last
 	if (hasAudioOutput) {
 		if (TEAudioOutput == nullptr) {
@@ -475,7 +521,7 @@ HRESULT VDJTouchEngine::OnAudioSamples(float* buffer, int nb)
 		}
 		audioMutex.unlock();
 
-	}
+	}*/
 
 
 	return S_OK;
@@ -542,6 +588,11 @@ bool VDJTouchEngine::LoadTEFile()
 	if (instance == nullptr)
 	{
 		LoadTouchEngine();
+		if (instance == nullptr)
+		{
+			logger->error("Failed to create TouchEngine instance");
+			return false;
+		}
 	}
 
 	// 2. Load the tox file into the TouchEngine
@@ -565,32 +616,6 @@ bool VDJTouchEngine::LoadTEFile()
 	}
 
 
-	while (isTouchEngineLoaded == false) {
-		::Sleep(100);
-	}
-
-	while (isTouchEngineReady == false)
-	{
-		::Sleep(100);
-	}
-
-
-	GetAllParameters();
-
-
-	result = TEInstanceResume(instance);
-
-	if (result != TEResultSuccess)
-	{
-		return false;
-	}
-
-
-	if (TEVideoInputD3D == nullptr) {
-		TEVideoInputD3D.take(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
-	}
-
-
 	return true;
 }
 
@@ -601,10 +626,28 @@ void VDJTouchEngine::LoadTouchEngine() {
 		TEResult result = TEInstanceCreate(eventCallbackStatic, linkCallbackStatic, this, instance.take());
 		if (result != TEResultSuccess)
 		{
+			logger->error("Failed to create TouchEngine instance");
+			instance.reset();
 			return;
 		}
 
 	}
+
+}
+
+void VDJTouchEngine::ResumeTouchEngine() {
+	TEResult result = TEInstanceResume(instance);
+	if (result != TEResultSuccess)
+	{
+		logger->error("Failed to resume TouchEngine instance");
+	}
+
+	if (TEVideoInputD3D == nullptr) {
+		TEVideoInputD3D.take(TED3D11TextureCreate(D3DTextureInput, TETextureOriginTopLeft, kTETextureComponentMapIdentity, nullptr, nullptr));
+	}
+
+	GetAllParameters();
+	return;
 
 }
 
@@ -1120,6 +1163,7 @@ void VDJTouchEngine::eventCallback(TEEvent event, TEResult result, int64_t start
 		case TEEventInstanceDidLoad:
 			if (LoadTEGraphicsContext()) {
 				isTouchEngineLoaded = true;
+				ResumeTouchEngine();
 			}
 			// The tox file has been loaded into the TouchEngine
 			break;

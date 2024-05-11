@@ -84,10 +84,9 @@ public:
 	void eventCallback(TEEvent event, TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale);
 	void linkCallback(TELinkEvent event, const char* identifier);
 
+
 private:
-#ifdef _DEBUG
-	RENDERDOC_API_1_1_2* rdoc_api = nullptr;
-#endif // _DEBUG
+
 	std::shared_ptr<spdlog::logger> logger;
 
 	//Params for VirtualDJ
@@ -159,6 +158,7 @@ private:
 	void GetAllParameters();
 	void bitblt(ID3D11Device* d3dDev, ID3D11ShaderResourceView* textureView);
 	void UnloadTouchEngine();
+	void ResumeTouchEngine();
 
 	HRESULT CreateTexture();
 	HRESULT CreateVertexBuffer();

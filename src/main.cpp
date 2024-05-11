@@ -1,7 +1,7 @@
 #include "VDJTouchEngine.h"
 
 
-std::string get_path(std::string DllName)
+std::string GetPluginPlath(std::string DllName)
 {
 	char* buffer = nullptr;
 	size_t size = 0;
@@ -23,7 +23,7 @@ std::string get_path(std::string DllName)
 
 VDJ_EXPORT HRESULT VDJ_API DllGetClassObject(const GUID& rclsid, const GUID& riid, void** ppObject)
 {
-	std::string UserPath = get_path("TouchEngine.dll");
+	std::string UserPath = GetPluginPlath("TouchEngine.dll");
 
 	if (UserPath.empty())
 	{

@@ -243,7 +243,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		return Result;
 	}
 
-	if (!isTouchEngineReady) {
+	if (!isTouchEngineLoaded) {
 		return S_FALSE;
 	
 	}
@@ -585,6 +585,7 @@ bool VDJTouchEngine::LoadTEFile()
 	// Load the tox file into the TouchEngine
 	// 1. Create a TouchEngine object
 
+
 	if (instance == nullptr)
 	{
 		LoadTouchEngine();
@@ -608,6 +609,7 @@ bool VDJTouchEngine::LoadTEFile()
 	{
 		return false;
 	}
+
 
 	result = TEInstanceLoad(instance);
 	if (result != TEResultSuccess)

@@ -48,6 +48,6 @@ jobs:
     - name: Generate Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "VDJTouchEngine-${{  github.ref_name }}"
+        artifacts: "VDJTouchEngine-${{  github.ref_name }}.zip"
         generateReleaseNotes: true
-        prerelease: true
+        prerelease: false

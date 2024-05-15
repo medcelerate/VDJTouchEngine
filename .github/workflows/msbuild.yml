@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   build:
+    permissions: write-all
     runs-on: windows-latest
 
     steps:

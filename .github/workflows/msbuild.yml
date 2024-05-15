@@ -20,11 +20,10 @@ env:
   BUILD_CONFIGURATION: Release
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
-    permissions: write-all
     runs-on: windows-latest
 
     steps:

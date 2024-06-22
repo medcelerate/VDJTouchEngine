@@ -1,7 +1,7 @@
 ## VirtualDJ TouchEngine
 ![DALL·E 2023-12-23 00 20 02 - 3D metallic text, colorful, logo with an alpha channel that Says Precisely TouchVDJ ](https://github.com/medcelerate/VDJTouchEngine/assets/32549017/066ea319-96c9-48ad-be9b-c76c9765942a)
 
-### Under Development - Not ready for production use
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q6YUGIA)
 
 Aim is to be able to develop virtual DJ plugins in a similar way to the oldschool Quartz Composer plugins.
 
@@ -36,15 +36,12 @@ There will be one row per deck in virtual DJ.
 
 ### V1 Release Requirements
 - Add BPM Input
-- Video Buffer In & Out
-- Audio Buffer In & Out
 
 ### To-Do
 - Add support for audio buffer injection. - Done
 - Add ability for exposing parameters for control through effects panel - In Progress
 - Add support for BPM control
-- Add support for video buffer injection - Readon works, writing does not yet. Workaround is to use spout to pull the video back into virtualDJ.
-- Add better async file loading support
+- Add support for video buffer injection - Done.
 - Add support for dyanmic sample rate
 - Add support for system controlled framerates
 - Add support for table DAT input params.

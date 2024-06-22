@@ -314,11 +314,11 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 		TEVideoInputD3D.take(TED3D11TextureCreate(texture.Get(), TETextureOriginTopLeft, kTETextureComponentMapIdentity, (TED3D11TextureCallback)textureCallback, nullptr));
 
 		//Exception being thornw here
-		TEResult result = TEInstanceLinkSetTextureValue(instance, "op/vdjtexturein", TEVideoInputD3D, D3DContext);
-		if (result != TEResultSuccess)
-		{
-			isPluginFX = false;
-		}
+			TEResult result = TEInstanceLinkSetTextureValue(instance, "op/input", TEVideoInputD3D, D3DContext);
+			if (result != TEResultSuccess)
+			{
+				isPluginFX = false;
+			}
 	}
 
 	std::unique_lock<std::mutex> lock(frameMutex);
@@ -346,7 +346,7 @@ HRESULT VDJ_API VDJTouchEngine::OnDraw() {
 	if (hasVideoOutput) {
 
 		TouchObject<TETexture> CurrentOutputTexture;
-		result = TEInstanceLinkGetTextureValue(instance, "op/vdjtextureout", TELinkValueCurrent, CurrentOutputTexture.take());
+		result = TEInstanceLinkGetTextureValue(instance, "op/output", TELinkValueCurrent, CurrentOutputTexture.take());
 
 		if (result == TEResultSuccess && CurrentOutputTexture != nullptr) {
 
@@ -938,7 +938,7 @@ void VDJTouchEngine::GetAllParameters()
 				parameters[object.vdj_id] = object;
 			}
 			else if (linkInfo->domain == TELinkDomainOperator) {
-				if (strcmp(linkInfo->name, "vdjtexturein") == 0 && linkInfo->type == TELinkTypeTexture)
+				if (strcmp(linkInfo->name, "input") == 0 && linkInfo->type == TELinkTypeTexture)
 				{
 					isPluginFX = true;
 					hasVideoInput = true;
@@ -1002,7 +1002,7 @@ void VDJTouchEngine::GetAllParameters()
 				return;
 			}
 
-			if (strcmp(linkInfo->name, "vdjtextureout") == 0 && linkInfo->type == TELinkTypeTexture)
+			if (strcmp(linkInfo->name, "output") == 0 && linkInfo->type == TELinkTypeTexture)
 			{
 				hasVideoOutput = true;
 			}
